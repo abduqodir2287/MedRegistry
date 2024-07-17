@@ -1,4 +1,4 @@
-from sqlalchemy import select, delete, update
+from sqlalchemy import select, delete, update, exists
 
 from src.configs.config import settings
 from src.infrastructure.database.postgres.database import Base
@@ -57,8 +57,8 @@ class DispensaryDb:
 		async with self.async_session() as session:
 			async with session.begin():
 
-				delete_task = delete(Dispensary).where(Dispensary.id == id)
-				result = await session.execute(delete_task)
+				delete_dispensary = delete(Dispensary).where(Dispensary.id == id)
+				result = await session.execute(delete_dispensary)
 
 				await session.commit()
 
@@ -68,15 +68,21 @@ class DispensaryDb:
 	async def update_dispensary_by_id(self, id: int, dispensary: DispensaryModel) -> bool | None:
 		async with self.async_session() as session:
 			async with session.begin():
-				update_task = update(Dispensary).where(Dispensary.id == id).values(
+				update_dispensary = update(Dispensary).where(Dispensary.id == id).values(
 					dispensary_name=dispensary.dispensary_name,
 					address=dispensary.address
 				)
 
-				result = await session.execute(update_task)
+				result = await session.execute(update_dispensary)
 				await session.commit()
 
 				if result.rowcount > 0:
 					return True
+
+	async def dispensary_exists(self, dispensary_id: int) -> bool:
+		async with self.async_session() as session:
+			exist = select(exists().where(Dispensary.id == dispensary_id))
+			result = await session.execute(exist)
+			return result.scalar()
 
 

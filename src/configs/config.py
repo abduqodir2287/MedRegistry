@@ -18,13 +18,19 @@ class Settings(BaseSettings):
     LOG_FILE: str
     LOG_BACKUP_COUNT: int
     LOG_WRITE_STATUS: bool
+    REDIS_DISPENSARY: int
+    REDIS_ROOM: int
+    REDIS_BUNK: int
+    REDIS_USERS: int
+    REDIS_PATIENTS: int
+
 
 # Создайте .env файл и напишите туда свои данные,
 # Такие как DB_URL, APPLICATION_PORT и т.д.
 # С помощю команды cp env_example .env в Терминале скопируйте в .env файл содержимое в env_example файле
 
     @property
-    def DATABASE_URL(self):
+    def DATABASE_URL(self) -> str:
         return f"postgresql+asyncpg://{self.POSTGRES_USER}:" \
                f"{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}/{self.POSTGRES_DB}"
 

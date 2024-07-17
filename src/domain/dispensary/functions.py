@@ -1,6 +1,4 @@
-from fastapi import HTTPException, status
 
-from src.configs.logger_setup import logger
 from src.domain.dispensary.schema import DispensaryResponse, DispensaryResponseForPost
 from src.infrastructure.database.postgres.create_db import dispensary
 from src.domain.dispensary.schema import DispensaryModel
