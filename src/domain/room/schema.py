@@ -1,6 +1,9 @@
 from pydantic import BaseModel
 from enum import Enum
 
+from src.domain.bunk.schema import BunkResponse
+
+
 class RoomStatus(str, Enum):
 	available = "available"
 	busy = "busy"
@@ -17,6 +20,15 @@ class RoomResponse(BaseModel):
 	room_number: int
 	dispensary_id: int
 
+
+class RoomResponseForGet(BaseModel):
+	id: int
+	room_status: RoomStatus = "available"
+	room_number: int
+	dispensary_id: int
+	bunks: list[BunkResponse]
+
+
 class RoomResponseForPost(BaseModel):
 	result: str = "Room added"
 	id: int
@@ -25,5 +37,5 @@ class RoomResponseForPost(BaseModel):
 	dispensary_id: int
 
 class AllRooms(BaseModel):
-	Rooms: list[RoomResponse]
+	Rooms: list[RoomResponseForGet]
 

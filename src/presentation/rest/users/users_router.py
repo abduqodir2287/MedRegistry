@@ -25,20 +25,20 @@ async def add_user(
 	return await users_service.add_user_service(firstname, lastname, job_title, dispensary_id)
 
 
-@users_router.get("/user_id", response_model=UserResponse, status_code=status.HTTP_200_OK)
+@users_router.get("/{user_id}", response_model=UserResponse, status_code=status.HTTP_200_OK)
 async def get_user_by_id(user_id: int) -> UserResponse:
 	return await users_service.get_user_by_id_service(user_id)
 
 
-@users_router.delete("/user_id", status_code=status.HTTP_204_NO_CONTENT)
+@users_router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user(user_id: int) -> None:
 	await users_service.delete_user_by_id_service(user_id)
 
 
 @users_router.patch("/user_id/role", response_model=UserResponseForPost, status_code=status.HTTP_200_OK)
-async def update_dispensary(
+async def update_user_role(
 		user_id: int, role: UserRole = Query(..., description="The role of the User")
 ) -> UserResponseForPost:
-	return await users_service.update_role_user_service(user_id, role)
+	return await users_service.update_user_role_service(user_id, role)
 
 

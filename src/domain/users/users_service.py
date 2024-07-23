@@ -41,7 +41,12 @@ class UsersService(UsersFunctions):
 				detail="There is no Dispensary with this id."
 			)
 
+		if not await dispensary.select_dispensary_status(dispensary_id):
+			logger.warning("Dispensary status is False")
+			raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="This dispensary is not active right now")
+
 		user_id = await users.insert_user(user_model)
+		# await self.add_user_in_redis(user_id, user_model)
 
 		result = await self.add_id_function(user_id, user_model)
 		logger.info("User added successfully")
@@ -56,27 +61,17 @@ class UsersService(UsersFunctions):
 			logger.warning("User not found")
 			raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
+		# self.redis_client.delete(user_id)
 		logger.info("User deleted successfully")
 
 
 	async def get_user_by_id_service(self, user_id: int) -> UserResponse:
-		user_by_id = await users.select_user_by_id(user_id)
+		user_by_id = await self.get_user_by_id_function(user_id)
 
-		if user_by_id is None:
-			logger.warning("User not found")
-			raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-
-		return UserResponse(
-			id=user_by_id.id,
-			firstname=user_by_id.firstname,
-			lastname=user_by_id.lastname,
-			job_title=user_by_id.job_title,
-			role=user_by_id.role,
-			dispensary_id=user_by_id.dispensary_id
-		)
+		return user_by_id
 
 
-	async def update_role_user_service(self, user_id: int, role: UserRole) -> UserResponseForPost:
+	async def update_user_role_service(self, user_id: int, role: UserRole) -> UserResponseForPost:
 		user_by_id = await users.select_user_by_id(user_id)
 
 		if user_by_id is None:
@@ -84,6 +79,11 @@ class UsersService(UsersFunctions):
 			raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
 		if await users.update_user_role(user_id, role):
+			# await self.update_user_role_redis(
+			# 	user_id, user_by_id.firstname,
+			# 	user_by_id.lastname, user_by_id.job_title,
+			# 	role, user_by_id.dispensary_id
+			# )
 
 			return UserResponseForPost(
 				result="User Role updated",

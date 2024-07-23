@@ -96,3 +96,11 @@ class RoomDb:
 			result = await session.execute(exist)
 			return result.scalar()
 
+	async def get_rooms_by_dispensary_id(self, dispensary_id: int) -> list:
+		async with self.async_session() as session:
+			result = await session.execute(select(Room).where(Room.dispensary_id == dispensary_id))
+			task = result.scalars().all()
+
+			if task:
+				return task
+

@@ -1,6 +1,6 @@
 from fastapi import Query, HTTPException, status
 
-from src.domain.room.schema import AllRooms, RoomStatus, RoomResponseForPost, RoomModel, RoomResponse
+from src.domain.room.schema import AllRooms, RoomStatus, RoomResponseForPost, RoomModel, RoomResponseForGet
 from src.configs.logger_setup import logger
 from src.domain.room.functions import RoomsFunctions
 from src.infrastructure.database.postgres.create_db import room, dispensary
@@ -17,6 +17,7 @@ class RoomsService(RoomsFunctions):
 
 		return AllRooms(Rooms=all_rooms)
 
+
 	async def add_room_service(
 			self, room_number: int = Query(..., description="The number of the room"),
 			dispensary_id: int = Query(..., description="The dispensary id of the room")
@@ -31,6 +32,10 @@ class RoomsService(RoomsFunctions):
 			logger.warning("Dispensary not found")
 			raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="There is no Dispensary with this id")
 
+		if not await dispensary.select_dispensary_status(dispensary_id):
+			logger.warning("Dispensary status is False")
+			raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="This dispensary is not active right now")
+
 		existing_room = await room.check_room_exists(room_number, dispensary_id)
 		if existing_room:
 			logger.warning("Room already added")
@@ -40,6 +45,7 @@ class RoomsService(RoomsFunctions):
 			)
 
 		insert_response = await room.insert_room(room_model)
+		# await self.add_room_redis(insert_response, room_model)
 
 		result = await self.add_id_function(insert_response, room_model)
 		logger.info("Room added successfully")
@@ -47,19 +53,10 @@ class RoomsService(RoomsFunctions):
 		return result
 
 
-	async def get_room_by_number_service(self, dispensary_id: int, room_number: int) -> RoomResponse:
-		room_by_number = await room.select_room_by_number(room_number, dispensary_id)
+	async def get_room_by_number_service(self, dispensary_id: int, room_number: int) -> RoomResponseForGet:
+		dispensary_by_id = await self.get_room_by_id_function(dispensary_id, room_number)
 
-		if room_by_number is None:
-			logger.warning("Room not found")
-			raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Room not found")
-
-		return RoomResponse(
-			id=room_by_number.id,
-			room_status=room_by_number.room_status,
-			room_number=room_number,
-			dispensary_id=dispensary_id
-		)
+		return dispensary_by_id
 
 
 	async def delete_room_by_id_service(self, room_id: int) -> None:
@@ -68,6 +65,8 @@ class RoomsService(RoomsFunctions):
 		if result is None:
 			logger.warning("Room not found")
 			raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Room not found")
+
+		# self.redis_client.delete(room_id)
 
 		logger.info("Room deleted successfully")
 
@@ -80,6 +79,7 @@ class RoomsService(RoomsFunctions):
 			raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Room not found")
 
 		await room.update_room_by_id(room_id, room_status)
+		# await self.update_room_status_redis(room_id, room_status, room_by_id.room_number, room_by_id.dispensary_id)
 
 		return RoomResponseForPost(
 			result="Room Updated",

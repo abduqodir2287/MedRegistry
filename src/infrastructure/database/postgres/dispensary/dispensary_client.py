@@ -44,6 +44,7 @@ class DispensaryDb:
 
 			return result.scalars().all()
 
+
 	async def select_dispensary_by_id(self, id: int) -> Dispensary:
 		async with self.async_session() as session:
 			result = await session.execute(select(Dispensary).where(Dispensary.id == id))
@@ -65,6 +66,7 @@ class DispensaryDb:
 				if result.rowcount > 0:
 					return True
 
+
 	async def update_dispensary_by_id(self, id: int, dispensary: DispensaryModel) -> bool | None:
 		async with self.async_session() as session:
 			async with session.begin():
@@ -84,5 +86,27 @@ class DispensaryDb:
 			exist = select(exists().where(Dispensary.id == dispensary_id))
 			result = await session.execute(exist)
 			return result.scalar()
+
+
+	async def update_dispensary_status(self, dispensary_id: int, active_status: bool) -> bool | None:
+		async with self.async_session() as session:
+			async with session.begin():
+				update_dispensary = update(Dispensary).where(Dispensary.id == dispensary_id).values(
+					active=active_status
+				)
+
+				result = await session.execute(update_dispensary)
+				await session.commit()
+
+				if result.rowcount > 0:
+					return True
+
+	async def select_dispensary_status(self, dispensary_id: int) -> bool | None:
+		async with self.async_session() as session:
+			result = await session.execute(select(Dispensary).where(Dispensary.id == dispensary_id))
+			task = result.scalars().first()
+
+			if task:
+				return task.active
 
 

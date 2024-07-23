@@ -6,7 +6,6 @@ class Settings(BaseSettings):
     DOCKER_EXPOSED_PORT: str
     REDIS_HOST: str
     REDIS_PORT: int
-    REDIS_DATABASE: int
     REDIS_CACHE_EXPIRATION: int
     POSTGRES_DB: str
     POSTGRES_HOST: str
@@ -27,7 +26,7 @@ class Settings(BaseSettings):
 
 # Создайте .env файл и напишите туда свои данные,
 # Такие как DB_URL, APPLICATION_PORT и т.д.
-# С помощю команды cp env_example .env в Терминале скопируйте в .env файл содержимое в env_example файле
+# С помощю команды cp .env_example .env в Терминале скопируйте в .env файл содержимое в .env_example файле
 
     @property
     def DATABASE_URL(self) -> str:

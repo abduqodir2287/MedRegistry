@@ -1,4 +1,4 @@
-from sqlalchemy import select, delete, update, exists
+from sqlalchemy import select, delete, update, exists, func
 
 from src.configs.config import settings
 from src.infrastructure.database.postgres.database import Base
@@ -65,6 +65,18 @@ class BunkDb:
 				return task
 
 
+	async def select_bunks_by_room_number(self, dispensary_id: int, room_number: int) -> Bunk:
+		async with self.async_session() as session:
+			result = await session.execute(
+				select(Bunk).where(
+					Bunk.dispensary_id == dispensary_id,
+					Bunk.room_number == room_number
+				)
+			)
+
+			return result.scalars().all()
+
+
 	async def delete_bunk_by_id(self, id: int) -> bool | None:
 		async with self.async_session() as session:
 			async with session.begin():
@@ -90,6 +102,22 @@ class BunkDb:
 				if result.rowcount > 0:
 					return True
 
+	async def update_bunk_status(self, dispensary_id: int, room_number: int, bunk_number: int) -> bool | None:
+		async with self.async_session() as session:
+			async with session.begin():
+				update_bunk = update(Bunk).where(
+					Bunk.dispensary_id == dispensary_id,
+					Bunk.room_number == room_number,
+					Bunk.bunk_number == bunk_number).values(
+					bunk_status=BunkStatus("busy")
+				)
+
+				result = await session.execute(update_bunk)
+				await session.commit()
+
+				if result.rowcount > 0:
+					return True
+
 
 	async def bunk_exists(self, bunk_id: int) -> bool:
 		async with self.async_session() as session:
@@ -97,4 +125,18 @@ class BunkDb:
 			result = await session.execute(exist)
 			return result.scalar()
 
+
+	async def free_bunks_by_dispensary_id(self, dispensary_id: int) -> int | str:
+		async with self.async_session() as session:
+			stmt = select(func.count(Bunk.id)).where(
+				Bunk.dispensary_id == dispensary_id, Bunk.bunk_status == BunkStatus("available")
+			)
+
+			result = await session.execute(stmt)
+			task = result.scalar_one_or_none()
+
+			if task:
+				return task
+
+			return "There is not a single free bed at this dispensary yet"
 
