@@ -3,7 +3,8 @@ from fastapi.encoders import jsonable_encoder
 import json
 
 from src.configs.logger_setup import logger
-from src.domain.dispensary.schema import DispensaryResponse, DispensaryResponseForPost, DispensaryResponseForGet
+from src.domain.bunk.schema import BunkResponse
+from src.domain.dispensary.schema import DispensaryResponse, DispensaryPutModel, DispensaryResponseForGet
 from src.domain.room.schema import RoomResponse
 from src.infrastructure.database.postgres.create_db import dispensary, room, bunk
 from src.domain.dispensary.schema import DispensaryModel
@@ -87,6 +88,27 @@ class DispensariesFunctions:
 			free_bunks=await bunk.free_bunks_by_dispensary_id(dispensary_by_id.id)
 		)
 
+	@staticmethod
+	async def get_bunk_by_dispensary_id(dispensary_id: int) -> list[BunkResponse]:
+		all_bunks = await bunk.select_available_bunks_by_id(dispensary_id)
+		bunks_list = []
+
+		if all_bunks is not None:
+			for b in all_bunks:
+				if b is not None:
+					returned_bunk = BunkResponse(
+						id=b.id,
+						bunk_status=b.bunk_status,
+						bunk_number=b.bunk_number,
+						room_number=b.room_number,
+						dispensary_id=dispensary_id
+					)
+
+					bunks_list.append(returned_bunk)
+
+		return bunks_list
+
+
 	async def get_dispensary_by_id_redis(self, dispensary_id: int) -> DispensaryResponse:
 		dispensary_by_id = self.redis_client.get(dispensary_id)
 
@@ -101,15 +123,6 @@ class DispensariesFunctions:
 		return result
 
 
-	@staticmethod
-	async def add_id_function(id: int, dis_model: DispensaryModel) -> DispensaryResponseForPost:
-		return DispensaryResponseForPost(
-			result="Task Added",
-			id=id,
-			dispensary_name=dis_model.dispensary_name,
-			address=dis_model.address
-		)
-
 	async def add_dispensary_in_cache(self, dispensary_id: int, dispensary_model: DispensaryModel) -> None:
 		model_dispensary = DispensaryResponse(
 			id=dispensary_id,
@@ -121,9 +134,9 @@ class DispensariesFunctions:
 
 
 	@staticmethod
-	async def update_response_function(id: int, dis_model: DispensaryModel) -> DispensaryResponseForPost:
-		return DispensaryResponseForPost(
-			result="Task updated",
+	async def update_response_function(id: int, dis_model: DispensaryModel) -> DispensaryPutModel:
+		return DispensaryPutModel(
+			result="Dispensary updated",
 			id=id,
 			dispensary_name=dis_model.dispensary_name,
 			address=dis_model.address

@@ -1,9 +1,12 @@
-from fastapi import Query, HTTPException, status
+from fastapi import Query, HTTPException, status, Depends
 
-from src.domain.bunk.schema import BunkStatus, BunkModel, BunkResponseForPost, AllBunks, BunkResponseForGet
+from src.domain.bunk.schema import BunkStatus, BunkModel, BunkResponseForPut, BunkResponseForPost
+from src.domain.bunk.schema import AllBunks, BunkResponseForGet, AvailableBunks
 from src.configs.logger_setup import logger
 from src.domain.bunk.functions import BunkFunctions
 from src.infrastructure.database.postgres.create_db import dispensary, bunk
+from src.domain.authorization.auth import get_token
+from src.domain.authorization.dependencies import check_user_is_doctor
 
 
 class BunkService(BunkFunctions):
@@ -21,8 +24,11 @@ class BunkService(BunkFunctions):
 	async def add_bunk_service(
 			self, dispensary_id: int = Query(..., description="The dispensary id of the bunk"),
 			room_number: int = Query(..., description="The room number of the bunk"),
-			bunk_number: int = Query(..., description="The number of the bunk")
+			bunk_number: int = Query(..., description="The number of the bunk"),
+			token: str = Depends(get_token)
 	) -> BunkResponseForPost:
+
+		await check_user_is_doctor(dispensary_id, token)
 
 		bunk_model = BunkModel(
 			room_number=room_number,
@@ -45,27 +51,21 @@ class BunkService(BunkFunctions):
 		await self.check_room(room_number, dispensary_id)
 		await self.check_bunk(dispensary_id, room_number, bunk_number)
 
-		insert_response = await bunk.insert_bunk(bunk_model)
-		# await self.add_bunk_redis(insert_response, bunk_model)
+		bunk_id = await bunk.insert_bunk(bunk_model)
 
-		result = await self.add_id_function(insert_response, bunk_model)
 		logger.info("Bunk added successfully")
 
-		return result
+		return BunkResponseForPost(BunkId=bunk_id)
 
 
-	async def delete_bunk_by_id_service(self, bunk_id: int) -> None:
-		result = await bunk.delete_bunk_by_id(bunk_id)
+	async def get_available_bunks_service(self) -> AvailableBunks:
+		bunks_list = await self.get_available_bunks_function()
 
-		if result is None:
-			logger.warning("Bunk not found")
-			raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Bunk not found")
-
-		self.redis_client.delete(bunk_id)
-		logger.info("Bunk deleted successfully")
+		return AvailableBunks(Bunks=bunks_list)
 
 
-	async def update_bunk_status_by_id_service(self, bunk_id: int, bunk_status: BunkStatus) -> BunkResponseForPost:
+	@staticmethod
+	async def update_bunk_status_by_id_service(bunk_id: int, bunk_status: BunkStatus) -> BunkResponseForPut:
 		bunk_by_id = await bunk.select_bunk_by_id(bunk_id)
 
 		if bunk_by_id is None:
@@ -73,12 +73,9 @@ class BunkService(BunkFunctions):
 			raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Bunk not found")
 
 		await bunk.update_bunk_by_id(bunk_id, bunk_status)
-		await self.update_bunk_redis(
-			bunk_id, bunk_status, bunk_by_id.bunk_number,
-			bunk_by_id.room_number, bunk_by_id.dispensary_id
-		)
 
-		return BunkResponseForPost(
+
+		return BunkResponseForPut(
 			result="Bunk Updated",
 			id=bunk_id,
 			bunk_status=bunk_status,

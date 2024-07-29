@@ -32,7 +32,7 @@ class BunkResponseForGet(BaseModel):
 	patient: PatientResponse | None
 
 
-class BunkResponseForPost(BaseModel):
+class BunkResponseForPut(BaseModel):
 	result: str = "Bunk Added"
 	id: int
 	bunk_status: BunkStatus = "available"
@@ -40,6 +40,12 @@ class BunkResponseForPost(BaseModel):
 	room_number: int
 	bunk_number: int
 
+class BunkResponseForPost(BaseModel):
+	BunkId: int
+
 class AllBunks(BaseModel):
 	Bunks: list[BunkResponseForGet]
+
+class AvailableBunks(BaseModel):
+	Bunks: list[BunkResponse]
 

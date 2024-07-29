@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     REDIS_BUNK: int
     REDIS_USERS: int
     REDIS_PATIENTS: int
+    ALGORITHM: str
+    SECRET_KEY: str
 
 
 # Создайте .env файл и напишите туда свои данные,
@@ -32,6 +34,11 @@ class Settings(BaseSettings):
     def DATABASE_URL(self) -> str:
         return f"postgresql+asyncpg://{self.POSTGRES_USER}:" \
                f"{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}/{self.POSTGRES_DB}"
+
+    @property
+    def GET_AUTH_DATA(self) -> dict:
+        return {"secret_key": self.SECRET_KEY, "algorithm": self.ALGORITHM}
+
 
     model_config = SettingsConfigDict(env_file=".env")
 

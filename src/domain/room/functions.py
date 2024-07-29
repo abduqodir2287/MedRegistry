@@ -5,7 +5,7 @@ from fastapi import HTTPException, status
 from src.configs.logger_setup import logger
 from src.domain.bunk.schema import BunkResponse
 from src.infrastructure.database.postgres.create_db import room, bunk
-from src.domain.room.schema import RoomResponse, RoomModel, RoomResponseForPost, RoomStatus, RoomResponseForGet
+from src.domain.room.schema import RoomResponse, RoomModel, RoomStatus, RoomResponseForGet
 from src.infrastructure.database.redis.client import RedisClient
 from src.configs.config import settings
 
@@ -63,14 +63,6 @@ class RoomsFunctions:
 
 		return rooms_list
 
-
-	@staticmethod
-	async def add_id_function(id: int, room_model: RoomModel) -> RoomResponseForPost:
-		return RoomResponseForPost(
-			id=id,
-			room_number=room_model.room_number,
-			dispensary_id=room_model.dispensary_id
-		)
 
 	async def add_room_redis(self, room_id: int, room_model: RoomModel) -> None:
 		model_room = RoomResponse(

@@ -41,11 +41,10 @@ class PatientDb:
 			await session.commit()
 
 			await session.refresh(insert_into)
-			patient_args = (insert_into.id, insert_into.arrival_date, insert_into.status)
 
 			logger.info("User added to DB")
 
-			return patient_args
+			return insert_into.id
 
 
 	async def select_patient_by_id(self, patient_id: int) -> Patient:

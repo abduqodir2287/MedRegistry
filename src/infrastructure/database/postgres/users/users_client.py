@@ -28,9 +28,9 @@ class UsersDb:
 		async with self.async_session() as session:
 			async with session.begin():
 				insert_into = User(
-					firstname=user_model.firstname,
-					lastname=user_model.lastname,
-					job_title=user_model.job_title,
+					firstname=user_model.firstname.capitalize(),
+					lastname=user_model.lastname.capitalize(),
+					job_title=user_model.job_title.capitalize() if user_model.job_title is not None else None,
 					dispensary_id=user_model.dispensary_id
 				)
 				session.add(insert_into)
@@ -76,4 +76,37 @@ class UsersDb:
 				if result.rowcount > 0:
 					return True
 
+
+	async def select_user_by_name(self, firstname: int, lastname: int, dispensary_id: int) -> User:
+		async with self.async_session() as session:
+			select_users = select(User).where(
+				User.firstname == firstname,
+				User.lastname == lastname,
+				User.dispensary_id == dispensary_id
+			)
+
+			result = await session.execute(select_users)
+
+			return result.scalars().first()
+
+
+	async def create_user_superadmin(self, firstname: str, lastname: str, dispensary_id: int) -> int:
+		async with self.async_session() as session:
+			async with session.begin():
+				insert_into = User(
+					firstname=firstname.capitalize(),
+					lastname=lastname.capitalize(),
+					role="superadmin",
+					job_title="superadmin",
+					dispensary_id=dispensary_id
+				)
+				session.add(insert_into)
+
+			await session.commit()
+
+			await session.refresh(insert_into)
+			user_id = insert_into.id
+
+			logger.info("User added to DB")
+			return user_id
 

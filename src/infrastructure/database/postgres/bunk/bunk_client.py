@@ -1,4 +1,4 @@
-from sqlalchemy import select, delete, update, exists, func
+from sqlalchemy import select, update, exists, func
 
 from src.configs.config import settings
 from src.infrastructure.database.postgres.database import Base
@@ -77,16 +77,27 @@ class BunkDb:
 			return result.scalars().all()
 
 
-	async def delete_bunk_by_id(self, id: int) -> bool | None:
+	async def select_available_bunks(self) -> Bunk:
 		async with self.async_session() as session:
-			async with session.begin():
-				delete_bunk = delete(Bunk).where(Bunk.id == id)
-				result = await session.execute(delete_bunk)
+			result = await session.execute(
+				select(Bunk).where(
+					Bunk.bunk_status == BunkStatus("available")
+				)
+			)
 
-				await session.commit()
+			return result.scalars().all()
 
-				if result.rowcount > 0:
-					return True
+
+	async def select_available_bunks_by_id(self, dispensary_id: int) -> Bunk:
+		async with self.async_session() as session:
+			result = await session.execute(
+				select(Bunk).where(
+					Bunk.dispensary_id == dispensary_id,
+					Bunk.bunk_status == BunkStatus("available")
+				)
+			)
+
+			return result.scalars().all()
 
 
 	async def update_bunk_by_id(self, id: int, bunk_status: BunkStatus) -> bool | None:

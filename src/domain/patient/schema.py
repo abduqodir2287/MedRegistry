@@ -25,7 +25,7 @@ class PatientResponse(BaseModel):
 	room_number: int
 	bunk_number: int
 
-class PatientResponseForPost(BaseModel):
+class PatientResponseForPut(BaseModel):
 	result: str = "Patient added successfully"
 	id: int
 	firstname: str
@@ -35,6 +35,10 @@ class PatientResponseForPost(BaseModel):
 	dispensary_id: int
 	room_number: int
 	bunk_number: int
+
+
+class PatientResponseForPost(BaseModel):
+	PatientId: int
 
 
 class AllPatients(BaseModel):

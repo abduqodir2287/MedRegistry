@@ -5,7 +5,7 @@ from fastapi import HTTPException, status
 from src.configs.logger_setup import logger
 from src.domain.patient.schema import PatientResponse
 from src.infrastructure.database.postgres.create_db import bunk, room, patient
-from src.domain.bunk.schema import BunkResponse, BunkModel, BunkResponseForPost, BunkStatus, BunkResponseForGet
+from src.domain.bunk.schema import BunkResponse, BunkModel, BunkStatus, BunkResponseForGet
 from src.domain.room.schema import RoomStatus
 from src.infrastructure.database.redis.client import RedisClient
 from src.configs.config import settings
@@ -31,6 +31,30 @@ class BunkFunctions:
 			bunks_list.append(returned_bunks)
 
 		logger.info("Bunks sent from DB")
+		return bunks_list
+
+
+
+	@staticmethod
+	async def get_available_bunks_function() -> list[BunkResponse]:
+		available_bunks = await bunk.select_available_bunks()
+		bunks_list = []
+
+		if available_bunks is None:
+			logger.warning("Available bunks not found")
+			raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Available bunks not found")
+
+		for b in available_bunks:
+			returned_bunk = BunkResponse(
+				id=b.id,
+				bunk_status=b.bunk_status,
+				dispensary_id=b.dispensary_id,
+				room_number=b.room_number,
+				bunk_number=b.bunk_number
+			)
+
+			bunks_list.append(returned_bunk)
+
 		return bunks_list
 
 
@@ -62,16 +86,6 @@ class BunkFunctions:
 			bunks_list.append(json.loads(returned_bunk))
 
 		return bunks_list
-
-
-	@staticmethod
-	async def add_id_function(id: int, bunk_model: BunkModel) -> BunkResponseForPost:
-		return BunkResponseForPost(
-			id=id,
-			dispensary_id=bunk_model.dispensary_id,
-			room_number=bunk_model.room_number,
-			bunk_number=bunk_model.bunk_number
-		)
 
 
 	async def add_bunk_redis(self, id: int, bunk_model: BunkModel) -> None:
@@ -158,7 +172,7 @@ class BunkFunctions:
 			self, bunk_id: int, bunk_status: BunkStatus,
 			bunk_number: int, room_number: int,
 			dispensary_id: int
-	):
+	) -> None:
 		bunk_model = BunkResponse(
 			id=bunk_id,
 			bunk_status=bunk_status,

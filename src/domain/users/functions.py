@@ -2,8 +2,9 @@ from fastapi.encoders import jsonable_encoder
 from fastapi import HTTPException, status
 import json
 
+
 from src.configs.logger_setup import logger
-from src.domain.users.schema import UserResponse, UserModel, UserResponseForPost, UserRole
+from src.domain.users.schema import UserResponse, UserModel, UserRole
 from src.infrastructure.database.postgres.create_db import users
 from src.infrastructure.database.redis.client import RedisClient
 from src.configs.config import settings
@@ -13,15 +14,6 @@ class UsersFunctions:
 	def __init__(self) -> None:
 		self.redis_client = RedisClient(settings.REDIS_USERS)
 
-	@staticmethod
-	async def add_id_function(id: int, user_model: UserModel) -> UserResponseForPost:
-		return UserResponseForPost(
-			id=id,
-			firstname=user_model.firstname,
-			lastname=user_model.lastname,
-			job_title=user_model.job_title,
-			dispensary_id=user_model.dispensary_id
-		)
 
 	@staticmethod
 	async def get_all_users_function() -> list:
@@ -111,7 +103,4 @@ class UsersFunctions:
 		)
 
 		self.redis_client.set(id, json.dumps(jsonable_encoder(user_model)))
-
-
-
 

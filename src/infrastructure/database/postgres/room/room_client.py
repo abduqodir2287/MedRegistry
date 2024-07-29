@@ -1,9 +1,9 @@
-from sqlalchemy import select, delete, update, exists
+from sqlalchemy import select, delete, exists
 
 from src.configs.config import settings
 from src.infrastructure.database.postgres.database import Base
 from src.infrastructure.database.postgres.models import Room
-from src.domain.room.schema import RoomModel, RoomStatus
+from src.domain.room.schema import RoomModel
 from src.configs.logger_setup import logger
 
 
@@ -56,19 +56,6 @@ class RoomDb:
 				delete_room = delete(Room).where(Room.id == id)
 				result = await session.execute(delete_room)
 
-				await session.commit()
-
-				if result.rowcount > 0:
-					return True
-
-	async def update_room_by_id(self, id: int, room_status: RoomStatus) -> bool | None:
-		async with self.async_session() as session:
-			async with session.begin():
-				update_room = update(Room).where(Room.id == id).values(
-					room_status=room_status
-				)
-
-				result = await session.execute(update_room)
 				await session.commit()
 
 				if result.rowcount > 0:

@@ -4,11 +4,11 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 
 
 def create_patient_discharge_pdf(filename, patient_info, discharge_summary, dispensary_info):
-	# Создание документа
+
 	doc = SimpleDocTemplate(filename, pagesize=A4)
 	elements = []
 
-	# Стиль заголовка
+
 	styles = getSampleStyleSheet()
 	title_style = ParagraphStyle(
 		'Title',
@@ -18,7 +18,7 @@ def create_patient_discharge_pdf(filename, patient_info, discharge_summary, disp
 		spaceAfter=14
 	)
 
-	# Заголовок документа
+
 	title = Paragraph("Bemor bayonoti", title_style)
 	elements.append(title)
 	elements.append(Spacer(1, 12))
@@ -39,12 +39,12 @@ def create_patient_discharge_pdf(filename, patient_info, discharge_summary, disp
 	elements.append(dispensary_info_paragraph)
 	elements.append(Spacer(1, 12))
 
-	# Стиль для информации о пациенте
+
 	info_title_style = ParagraphStyle(
 		'InfoTitle',
 		parent=styles['Normal'],
 		fontName='Helvetica-Bold',
-		fontSize=14,  # Размер шрифта для заголовка "Bemor Ma'lumotlari"
+		fontSize=14,
 		spaceAfter=6
 	)
 
@@ -56,11 +56,11 @@ def create_patient_discharge_pdf(filename, patient_info, discharge_summary, disp
 		leading=16
 	)
 
-	# Заголовок "Bemor Ma'lumotlari"
+
 	patient_info_title = Paragraph("Bemor Ma'lumotlari", info_title_style)
 	elements.append(patient_info_title)
 
-	# Информация о пациенте
+
 	patient_info_text = f"""
     <b>ID:</b> {patient_info['id']}<br/>
     <b>Ism:</b> {patient_info['firstname']}<br/>
@@ -75,12 +75,12 @@ def create_patient_discharge_pdf(filename, patient_info, discharge_summary, disp
 	elements.append(patient_info_paragraph)
 	elements.append(Spacer(1, 12))
 
-	# Заголовок для итогового диагноза и рекомендаций
+
 	summary_title = Paragraph("Yakuniy tashxis va tavsiyalar:", title_style)
 	elements.append(summary_title)
 	elements.append(Spacer(1, 12))
 
-	# Итоговый диагноз и рекомендации
+
 	discharge_summary_paragraph = Paragraph(discharge_summary, info_style)
 	elements.append(discharge_summary_paragraph)
 	elements.append(Spacer(1, 12))
@@ -102,7 +102,6 @@ def create_patient_discharge_pdf(filename, patient_info, discharge_summary, disp
 	elements.append(dispensary_info_paragraph)
 	elements.append(Spacer(1, 12))
 
-	# Генерация PDF
 	doc.build(elements)
 
 

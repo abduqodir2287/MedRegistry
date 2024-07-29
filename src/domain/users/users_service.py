@@ -1,10 +1,13 @@
 from typing import Optional
-from fastapi import Query, HTTPException, status
+from fastapi import Query, HTTPException, status, Response, Depends
 
 from src.configs.logger_setup import logger
 from src.domain.users.functions import UsersFunctions
-from src.domain.users.schema import UserModel, UserResponse, AllUsers, UserRole, UserResponseForPost
+from src.domain.users.schema import UserModel, UserResponse, AllUsers, AuthorizedUser
+from src.domain.users.schema import UserRole, UserResponseForPut, UserResponseForPost
 from src.infrastructure.database.postgres.create_db import dispensary, users
+from src.domain.authorization.auth import create_access_token, get_token
+from src.domain.authorization.dependencies import check_user_is_superadmin, check_user_is_doctor
 
 
 class UsersService(UsersFunctions):
@@ -19,12 +22,29 @@ class UsersService(UsersFunctions):
 		return AllUsers(Users=users_list)
 
 
+	async def auth_user(self, response: Response, firstname: str, lastname: str, dispensary_id: int) -> AuthorizedUser:
+		user_by_name = await users.select_user_by_name(firstname.capitalize(), lastname.capitalize(), dispensary_id)
+
+		if user_by_name is None:
+			logger.warning("User not found")
+			raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+		access_token = create_access_token({"sub": str(user_by_name.id)})
+		response.set_cookie(key="user_access_token", value=access_token, httponly=True)
+
+		return AuthorizedUser(result="User is successfully authorized")
+
+
+
 	async def add_user_service(
 			self, firstname: str = Query(..., description="The firstname of the bunk"),
 			lastname: str = Query(..., description="The lastname of the user"),
 			job_title: Optional[str] = Query(None, description="The job title of the user"),
-			dispensary_id: int = Query(..., description="The dispensary id of the bunk")
+			dispensary_id: int = Query(..., description="The dispensary id of the bunk"),
+			token: str = Depends(get_token)
 	) -> UserResponseForPost:
+
+		await check_user_is_doctor(dispensary_id, token)
 
 		user_model = UserModel(
 			firstname=firstname,
@@ -46,22 +66,20 @@ class UsersService(UsersFunctions):
 			raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="This dispensary is not active right now")
 
 		user_id = await users.insert_user(user_model)
-		# await self.add_user_in_redis(user_id, user_model)
 
-		result = await self.add_id_function(user_id, user_model)
 		logger.info("User added successfully")
 
-		return result
+		return UserResponseForPost(UserId=user_id)
 
 
-	async def delete_user_by_id_service(self, user_id: int) -> None:
+	async def delete_user_by_id_service(self, user_id: int, token: str = Query(get_token)) -> None:
 		user_delete = await users.delete_user_by_id(user_id)
+		await check_user_is_superadmin(token)
 
 		if user_delete is None:
 			logger.warning("User not found")
 			raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
-		# self.redis_client.delete(user_id)
 		logger.info("User deleted successfully")
 
 
@@ -71,21 +89,20 @@ class UsersService(UsersFunctions):
 		return user_by_id
 
 
-	async def update_user_role_service(self, user_id: int, role: UserRole) -> UserResponseForPost:
+	@staticmethod
+	async def update_user_role_service(
+			user_id: int, role: UserRole, token: str = Depends(get_token)) -> UserResponseForPut:
+
 		user_by_id = await users.select_user_by_id(user_id)
+		await check_user_is_superadmin(token)
 
 		if user_by_id is None:
 			logger.warning("User not found")
 			raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
 		if await users.update_user_role(user_id, role):
-			# await self.update_user_role_redis(
-			# 	user_id, user_by_id.firstname,
-			# 	user_by_id.lastname, user_by_id.job_title,
-			# 	role, user_by_id.dispensary_id
-			# )
 
-			return UserResponseForPost(
+			return UserResponseForPut(
 				result="User Role updated",
 				id=user_id,
 				firstname=user_by_id.firstname,
@@ -94,6 +111,5 @@ class UsersService(UsersFunctions):
 				role=role,
 				dispensary_id=user_by_id.dispensary_id
 			)
-
 
 

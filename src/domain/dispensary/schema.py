@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+from src.domain.bunk.schema import BunkResponse
 from src.domain.room.schema import RoomResponse
 
 class DispensaryModel(BaseModel):
@@ -20,14 +21,27 @@ class DispensaryResponseForGet(BaseModel):
 	rooms: list[RoomResponse]
 	free_bunks: int | str
 
-class DispensaryResponseForPost(BaseModel):
-	result: str = "Task updated"
+
+class DispensaryWithAvailableBunks(BaseModel):
+	id: int
+	dispensary_name: str
+	address: str
+	active: bool
+	free_bunks: list[BunkResponse]
+
+class DispensaryPutModel(BaseModel):
+	result: str = "Dispensary updated"
 	id: int
 	dispensary_name: str
 	address: str
 
+
+class DispensaryResponseForPost(BaseModel):
+	DispensaryID: int
+
+
 class DispensaryResponseForPut(BaseModel):
-	result: str = "Task updated"
+	result: str = "Dispensary updated"
 	id: int
 	dispensary_name: str
 	address: str
@@ -36,3 +50,5 @@ class DispensaryResponseForPut(BaseModel):
 
 class AllDispensaries(BaseModel):
 	Dispensaries: list[DispensaryResponseForGet]
+
+

@@ -4,7 +4,7 @@ from fastapi import HTTPException, status
 import json
 
 from src.configs.logger_setup import logger
-from src.domain.patient.schema import PatientResponse, PatientStatus, PatientModel, PatientResponseForPost
+from src.domain.patient.schema import PatientResponse, PatientStatus, PatientModel
 from src.domain.bunk.schema import BunkResponse, BunkStatus
 from src.infrastructure.database.postgres.create_db import patient, bunk, room
 from src.infrastructure.database.redis.client import RedisClient
@@ -53,24 +53,6 @@ class PatientsFunctions:
 		return patients_list
 
 
-
-	@staticmethod
-	async def add_id_function(
-			patient_model: PatientModel,
-			id: int, arrival_date: datetime, patient_status: PatientStatus
-	) -> PatientResponseForPost:
-
-		return PatientResponseForPost(
-			id=id,
-			firstname=patient_model.firstname,
-			lastname=patient_model.lastname,
-			arrival_date=arrival_date,
-			status=patient_status,
-			dispensary_id=patient_model.dispensary_id,
-			room_number=patient_model.room_number,
-			bunk_number=patient_model.bunk_number
-		)
-
 	async def add_patient_redis(self, patient_id: int, arrival_date: datetime, patient_model: PatientModel) -> None:
 		bunk_by_number = await bunk.select_bunk_by_number(
 			patient_model.dispensary_id, patient_model.room_number, patient_model.bunk_number)
@@ -112,9 +94,8 @@ class PatientsFunctions:
 		return True
 
 	@staticmethod
-	async def check_room(room_number: int, dispensary_id: int) -> bool:
+	async def check_room(room_number: int) -> bool:
 		exist_room = await room.room_exists(room_number)
-		room_by_number = await room.select_room_by_number(room_number, dispensary_id)
 
 		if not exist_room:
 			logger.warning("Room not found")

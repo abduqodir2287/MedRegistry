@@ -81,6 +81,7 @@ class DispensaryDb:
 				if result.rowcount > 0:
 					return True
 
+
 	async def dispensary_exists(self, dispensary_id: int) -> bool:
 		async with self.async_session() as session:
 			exist = select(exists().where(Dispensary.id == dispensary_id))

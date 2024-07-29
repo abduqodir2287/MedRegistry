@@ -1,10 +1,12 @@
-from fastapi import Query, HTTPException, status
+from fastapi import Query, HTTPException, status, Depends
 
-from src.domain.dispensary.schema import DispensaryResponseForPost, AllDispensaries, DispensaryResponseForGet, \
-	DispensaryResponseForPut
-from src.domain.dispensary.schema import DispensaryModel
+from src.domain.dispensary.schema import DispensaryPutModel, AllDispensaries, DispensaryResponseForGet
+from src.domain.dispensary.schema import DispensaryResponseForPut, DispensaryResponseForPost
+from src.domain.dispensary.schema import DispensaryModel, DispensaryWithAvailableBunks
 from src.configs.logger_setup import logger
 from src.domain.dispensary.functions import DispensariesFunctions
+from src.domain.authorization.auth import get_token
+from src.domain.authorization.dependencies import check_user_is_superadmin
 from src.infrastructure.database.postgres.create_db import dispensary
 
 
@@ -19,27 +21,30 @@ class DispensaryService(DispensariesFunctions):
 
 		return AllDispensaries(Dispensaries=all_dispensaries)
 
+
 	async def add_dispensary_service(
 			self, dispensary_name: str = Query(..., description="The name of the dispensary"),
-			address: str = Query(..., description="The address of the dispensary")
+			address: str = Query(..., description="The address of the dispensary"),
+			token: str = Depends(get_token)
 	) -> DispensaryResponseForPost:
+
+		await check_user_is_superadmin(token)
 
 		dispensary_model = DispensaryModel(
 			dispensary_name=dispensary_name,
 			address=address
 		)
 
-		insert_response = await dispensary.insert_dispensary(dispensary_model)
+		dispensary_id = await dispensary.insert_dispensary(dispensary_model)
 
-		result = await self.add_id_function(insert_response, dispensary_model)
-
-		logger.info("Task added successfully")
-		return result
+		logger.info("Dispensary added successfully")
+		return DispensaryResponseForPost(DispensaryID=dispensary_id)
 
 
 	@staticmethod
-	async def delete_dispensary_by_id_service(dispensary_id: int) -> None:
+	async def delete_dispensary_by_id_service(dispensary_id: int, token: str = Depends(get_token)) -> None:
 		result = await dispensary.update_dispensary_status(dispensary_id, False)
+		await check_user_is_superadmin(token)
 
 		if result is None:
 			logger.warning("Dispensary not found")
@@ -48,12 +53,40 @@ class DispensaryService(DispensariesFunctions):
 		logger.info("Dispensary deleted successfully")
 
 
+	async def get_available_bunks_in_dispensary(self, dispensary_id: int) -> DispensaryWithAvailableBunks:
+		dispensary_by_id = await dispensary.select_dispensary_by_id(dispensary_id)
+		bunks_list = await self.get_bunk_by_dispensary_id(dispensary_id)
+
+		if dispensary_by_id is None:
+			logger.warning("Dispensary with this id not found")
+			raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Dispensary with this id not found")
+
+		if not dispensary_by_id.active:
+			logger.info("Dispensary with this id is not active")
+			raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="This dispensary is not active right now")
+
+		if not bunks_list:
+			logger.warning("No free bunks available in this dispensary")
+			raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+			                    detail="No free bunks available in this dispensary")
+
+		return DispensaryWithAvailableBunks(
+			id=dispensary_by_id.id,
+			dispensary_name=dispensary_by_id.dispensary_name,
+			address=dispensary_by_id.address,
+			active=dispensary_by_id.active,
+			free_bunks=bunks_list
+		)
+
 
 	async def update_dispensary_service(
 			self, id: int, dispensary_name: str = Query(None, description="The name of the dispensary"),
-			address: str = Query(None, description="The address of the dispensary")
-	) -> DispensaryResponseForPost:
+			address: str = Query(None, description="The address of the dispensary"),
+			token: str = Depends(get_token)
+	) -> DispensaryPutModel:
 		dispensary_by_id = await dispensary.select_dispensary_by_id(id)
+
+		await check_user_is_superadmin(token)
 
 		if dispensary_by_id is None:
 			logger.warning("Dispensary not found")
@@ -82,8 +115,11 @@ class DispensaryService(DispensariesFunctions):
 		return dispensary_by_id
 
 
-	async def update_dispensary_status_service(self, dispensary_id: int) -> DispensaryResponseForPut:
+	async def update_dispensary_status_service(
+			self, dispensary_id: int, token: str = Depends(get_token)) -> DispensaryResponseForPut:
 		dispensary_by_id = await dispensary.select_dispensary_by_id(dispensary_id)
+
+		await check_user_is_superadmin(token)
 
 		if dispensary_by_id is None:
 			logger.warning("Dispensary not found")

@@ -30,6 +30,10 @@ class RoomResponseForGet(BaseModel):
 
 
 class RoomResponseForPost(BaseModel):
+	RoomId: int
+
+
+class RoomResponseForPut(BaseModel):
 	result: str = "Room added"
 	id: int
 	room_status: RoomStatus = "available"

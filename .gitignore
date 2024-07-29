@@ -71,3 +71,4 @@ media/
 
 # Other files
 /main.py
+/jwt_generator.py

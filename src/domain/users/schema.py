@@ -24,7 +24,7 @@ class UserResponse(BaseModel):
 	role: UserRole = "user"
 	dispensary_id: int
 
-class UserResponseForPost(BaseModel):
+class UserResponseForPut(BaseModel):
 	result: str = "User added"
 	id: int
 	firstname: str
@@ -32,6 +32,13 @@ class UserResponseForPost(BaseModel):
 	job_title: Optional[str] = None
 	role: UserRole = "user"
 	dispensary_id: int
+
+class UserResponseForPost(BaseModel):
+	UserId: int
+
+
+class AuthorizedUser(BaseModel):
+	result: str
 
 
 class AllUsers(BaseModel):
