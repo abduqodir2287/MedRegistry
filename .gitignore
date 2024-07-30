@@ -67,7 +67,7 @@ media/
 
 
 # Linet For Tasks Router
-/.ruff_cache
+.ruff_cache/
 
 # Other files
 /main.py

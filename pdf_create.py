@@ -105,7 +105,6 @@ def create_patient_discharge_pdf(filename, patient_info, discharge_summary, disp
 	doc.build(elements)
 
 
-# Пример использования
 test_patient_info = {
 	"id": 12345,
 	"firstname": "Abduqodir",

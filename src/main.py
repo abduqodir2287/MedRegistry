@@ -1,12 +1,10 @@
 from fastapi import FastAPI, status
 from contextlib import asynccontextmanager
 
-from src.infrastructure.database.postgres.create_db import dispensary
 from src.presentation.rest.routers import all_routers
 
 @asynccontextmanager
 async def lifespan_app(my_app: FastAPI):
-	await dispensary.create_table()
 	yield
 
 

@@ -1,2 +1,12 @@
 .env_example
 Makefile
+.pytest_cache/
+.ruff_cache/
+tests/
+/.gitignore
+jwt_generator.py
+/main.py
+patient_discharge.pdf
+pdf_create.py
+/README.md
+task.md

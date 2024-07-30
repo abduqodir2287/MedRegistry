@@ -22,7 +22,8 @@ class UsersService(UsersFunctions):
 		return AllUsers(Users=users_list)
 
 
-	async def auth_user(self, response: Response, firstname: str, lastname: str, dispensary_id: int) -> AuthorizedUser:
+	@staticmethod
+	async def auth_user(response: Response, firstname: str, lastname: str, dispensary_id: int) -> AuthorizedUser:
 		user_by_name = await users.select_user_by_name(firstname.capitalize(), lastname.capitalize(), dispensary_id)
 
 		if user_by_name is None:
@@ -34,10 +35,9 @@ class UsersService(UsersFunctions):
 
 		return AuthorizedUser(result="User is successfully authorized")
 
-
-
+	@staticmethod
 	async def add_user_service(
-			self, firstname: str = Query(..., description="The firstname of the bunk"),
+			firstname: str = Query(..., description="The firstname of the bunk"),
 			lastname: str = Query(..., description="The lastname of the user"),
 			job_title: Optional[str] = Query(None, description="The job title of the user"),
 			dispensary_id: int = Query(..., description="The dispensary id of the bunk"),
@@ -72,7 +72,8 @@ class UsersService(UsersFunctions):
 		return UserResponseForPost(UserId=user_id)
 
 
-	async def delete_user_by_id_service(self, user_id: int, token: str = Query(get_token)) -> None:
+	@staticmethod
+	async def delete_user_by_id_service(user_id: int, token: str = Query(get_token)) -> None:
 		user_delete = await users.delete_user_by_id(user_id)
 		await check_user_is_superadmin(token)
 

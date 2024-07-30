@@ -24,7 +24,7 @@ async def check_user_is_superadmin(token: str = Depends(get_token)) -> User:
 
 	user_by_id = await users.select_user_by_id(int(user_id))
 	if not user_by_id:
-		raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='User not found')
+		raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='User with this ID not found')
 
 	if user_by_id.role != "superadmin":
 		logger.warning("User are not superadmin")

@@ -14,12 +14,6 @@ class DispensaryDb:
 		self.metadata = Base.metadata
 		self.async_session = Base.async_session
 
-
-	async def create_table(self) -> None:
-		async with self.engine.begin() as conn:
-			await conn.run_sync(self.metadata.create_all)
-
-
 	async def insert_dispensary(self, dispensary: DispensaryModel) -> tuple:
 		async with self.async_session() as session:
 			async with session.begin():
