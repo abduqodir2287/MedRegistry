@@ -16,7 +16,7 @@ class BunkService(BunkFunctions):
 
 	async def get_bunks_service(self) -> AllBunks:
 		all_bunks = await self.get_bunks_function()
-		logger.info("Bunks sent from Redis")
+		logger.info("Bunks sent from DB")
 
 		return AllBunks(Bunks=all_bunks)
 
@@ -60,6 +60,7 @@ class BunkService(BunkFunctions):
 
 	async def get_available_bunks_service(self) -> AvailableBunks:
 		bunks_list = await self.get_available_bunks_function()
+		logger.info("Bunks sent from DB")
 
 		return AvailableBunks(Bunks=bunks_list)
 
@@ -74,6 +75,7 @@ class BunkService(BunkFunctions):
 
 		await bunk.update_bunk_by_id(bunk_id, bunk_status)
 
+		logger.info("Bunk updated successfully")
 
 		return BunkResponseForPut(
 			result="Bunk Updated",

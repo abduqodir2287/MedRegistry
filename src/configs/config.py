@@ -28,7 +28,7 @@ class Settings(BaseSettings):
 
 # Создайте .env файл и напишите туда свои данные,
 # Такие как DB_URL, APPLICATION_PORT и т.д.
-# С помощю команды cp .env_example .env в Терминале скопируйте в .env файл содержимое в .env_example файле
+# С помощи команды cp .env_example .env в Терминале скопируйте в .env файл содержимое в .env_example файле
 
     @property
     def DATABASE_URL(self) -> str:

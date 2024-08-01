@@ -18,6 +18,7 @@ class UsersService(UsersFunctions):
 
 	async def get_all_users_service(self) -> AllUsers:
 		users_list = await self.get_all_users_function()
+		logger.info("Users sent from Db")
 
 		return AllUsers(Users=users_list)
 
@@ -32,6 +33,8 @@ class UsersService(UsersFunctions):
 
 		access_token = create_access_token({"sub": str(user_by_name.id)})
 		response.set_cookie(key="user_access_token", value=access_token, httponly=True)
+
+		logger.info("User is successfully authorized")
 
 		return AuthorizedUser(result="User is successfully authorized")
 
@@ -74,8 +77,9 @@ class UsersService(UsersFunctions):
 
 	@staticmethod
 	async def delete_user_by_id_service(user_id: int, token: str = Query(get_token)) -> None:
-		user_delete = await users.delete_user_by_id(user_id)
 		await check_user_is_superadmin(token)
+
+		user_delete = await users.delete_user_by_id(user_id)
 
 		if user_delete is None:
 			logger.warning("User not found")
@@ -93,9 +97,9 @@ class UsersService(UsersFunctions):
 	@staticmethod
 	async def update_user_role_service(
 			user_id: int, role: UserRole, token: str = Depends(get_token)) -> UserResponseForPut:
+		await check_user_is_superadmin(token)
 
 		user_by_id = await users.select_user_by_id(user_id)
-		await check_user_is_superadmin(token)
 
 		if user_by_id is None:
 			logger.warning("User not found")

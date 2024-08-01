@@ -14,7 +14,7 @@ async def get_rooms() -> AllRooms:
 	return await room_service.get_rooms_service()
 
 
-@room_router.post("", response_model=RoomResponseForPost, status_code=status.HTTP_200_OK)
+@room_router.post("", response_model=RoomResponseForPost, status_code=status.HTTP_201_CREATED)
 async def add_rooms(
 		room_number: int = Query(..., description="The number of the room"),
 		dispensary_id: int = Query(..., description="The dispensary id of the room"),

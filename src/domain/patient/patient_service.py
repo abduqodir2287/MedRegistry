@@ -18,6 +18,7 @@ class PatientsService(PatientsFunctions):
 
 	async def get_all_patients_service(self) -> AllPatients:
 		patients_list = await self.get_all_patients_function()
+		logger.info("Patients sent from Db")
 
 		return AllPatients(Patients=patients_list)
 
@@ -77,11 +78,11 @@ class PatientsService(PatientsFunctions):
 
 		patient_by_id = await patient.select_patient_by_id(patient_id)
 
-		await check_user_is_doctor(patient_by_id.dispensary_id, token)
-
 		if patient_by_id is None:
 			logger.warning("Patient not found")
 			raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Patient not found")
+
+		await check_user_is_doctor(patient_by_id.dispensary_id, token)
 
 		if firstname is None and lastname is None:
 			logger.warning("Patient did not changed anything")

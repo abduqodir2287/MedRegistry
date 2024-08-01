@@ -9,3 +9,7 @@ alembic-upg:
 
 docker-alembic-upg:
 	docker exec -t med_registry-1 python -m alembic upgrade head
+
+test:
+	python -m pytest
+

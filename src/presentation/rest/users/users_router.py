@@ -55,8 +55,7 @@ async def update_user_role(
 	return await users_service.update_user_role_service(user_id, role, token)
 
 
-@users_router.post("/logout")
-async def logout_user(response: Response):
+@users_router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+async def logout_user(response: Response) -> None:
 	response.delete_cookie(key="user_access_token")
-	return {'message': "The user has successfully logged out"}
 

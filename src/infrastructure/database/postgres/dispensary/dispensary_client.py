@@ -27,7 +27,7 @@ class DispensaryDb:
 			await session.refresh(insert_into)
 			dispensary_id = insert_into.id
 
-			logger.info("Task added to DB")
+			logger.info("Dispensary added to DB")
 			return dispensary_id
 		
 	async def select_all_dispensaries(self) -> list:

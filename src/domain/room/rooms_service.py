@@ -56,6 +56,7 @@ class RoomsService(RoomsFunctions):
 
 	async def get_room_by_number_service(self, dispensary_id: int, room_number: int) -> RoomResponseForGet:
 		dispensary_by_id = await self.get_room_by_id_function(dispensary_id, room_number)
+		logger.info("Room sent from DB")
 
 		return dispensary_by_id
 
