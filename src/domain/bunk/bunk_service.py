@@ -1,7 +1,8 @@
 from fastapi import Query, HTTPException, status, Depends
 
-from src.domain.bunk.schema import BunkStatus, BunkModel, BunkResponseForPut, BunkResponseForPost
+from src.domain.bunk.schema import BunkModel, BunkResponseForPut, BunkResponseForPost
 from src.domain.bunk.schema import AllBunks, BunkResponseForGet, AvailableBunks
+from src.domain.enums import BunkStatus
 from src.configs.logger_setup import logger
 from src.domain.bunk.functions import BunkFunctions
 from src.infrastructure.database.postgres.create_db import dispensary, bunk

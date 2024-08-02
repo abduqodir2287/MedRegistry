@@ -3,7 +3,8 @@ from typing import Optional
 from fastapi import APIRouter, Query, status, Response, Depends
 
 from src.domain.authorization.auth import get_token
-from src.domain.users.schema import UserResponse, AllUsers, UserResponseForPut, UserRole, UserResponseForPost
+from src.domain.users.schema import UserResponse, AllUsers, UserResponseForPut, UserResponseForPost
+from src.domain.enums import UserRole
 from src.domain.users.schema import AuthorizedUser
 from src.domain.users.users_service import UsersService
 
@@ -13,28 +14,35 @@ users_service = UsersService()
 
 
 @users_router.get("", response_model=AllUsers, status_code=status.HTTP_200_OK)
-async def get_all_users() -> AllUsers:
-	return await users_service.get_all_users_service()
+async def get_all_users(
+		firstname: Optional[str] = Query(None, description="The firstname of the User"),
+		lastname: Optional[str] = Query(None, description="The lastname of the User"),
+		role: UserRole = Query(None, description="The role of the User"),
+		dispensary_id: Optional[int] = Query(None, description="The dispensary_id of the User")
+) -> AllUsers:
+	return await users_service.get_all_users_service(firstname, lastname, role, dispensary_id)
 
 
 @users_router.post("/authorization", response_model=AuthorizedUser, status_code=status.HTTP_200_OK)
 async def user_authorization(
 		response: Response, firstname: str = Query(..., description="The firstname of the user"),
 		lastname: str = Query(..., description="The lastname of the user"),
+		password: str = Query(..., description="Password for security"),
 		dispensary_id: int = Query(..., description="The dispensary id of the user")
 ) -> AuthorizedUser:
-	return await users_service.auth_user(response, firstname, lastname, dispensary_id)
+	return await users_service.auth_user(response, firstname, lastname, password, dispensary_id)
 
 
 @users_router.post("", response_model=UserResponseForPost, status_code=status.HTTP_201_CREATED)
 async def add_user(
 		firstname: str = Query(..., description="The firstname of the bunk"),
 		lastname: str = Query(..., description="The lastname of the user"),
+		password: str = Query(..., description="Password for security"),
 		job_title: Optional[str] = Query(None, description="The job title of the user"),
 		dispensary_id: int = Query(..., description="The dispensary id of the bunk"),
 		token: str = Depends(get_token)
 ) -> UserResponseForPost:
-	return await users_service.add_user_service(firstname, lastname, job_title, dispensary_id, token)
+	return await users_service.add_user_service(firstname, lastname, password, job_title, dispensary_id, token)
 
 
 @users_router.get("/{user_id}", response_model=UserResponse, status_code=status.HTTP_200_OK)

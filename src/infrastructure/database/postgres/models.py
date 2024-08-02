@@ -61,6 +61,7 @@ class User(Base):
     id = Column(Integer, primary_key=True)
     firstname = Column(Text, nullable=False)
     lastname = Column(Text, nullable=False)
+    password = Column(Text, nullable=False)
     job_title = Column(Text, nullable=True)
     role = Column(Text, default="user")
     dispensary_id = Column(Integer, ForeignKey("drug_dispensary.id"))

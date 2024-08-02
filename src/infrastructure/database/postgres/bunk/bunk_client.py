@@ -3,7 +3,8 @@ from sqlalchemy import select, update, exists, func
 from src.configs.config import settings
 from src.infrastructure.database.postgres.database import Base
 from src.infrastructure.database.postgres.models import Bunk
-from src.domain.bunk.schema import BunkModel, BunkStatus
+from src.domain.bunk.schema import BunkModel
+from src.domain.enums import BunkStatus
 from src.configs.logger_setup import logger
 
 
@@ -81,7 +82,7 @@ class BunkDb:
 		async with self.async_session() as session:
 			result = await session.execute(
 				select(Bunk).where(
-					Bunk.bunk_status == BunkStatus("available")
+					Bunk.bunk_status == BunkStatus.available
 				)
 			)
 
@@ -93,7 +94,7 @@ class BunkDb:
 			result = await session.execute(
 				select(Bunk).where(
 					Bunk.dispensary_id == dispensary_id,
-					Bunk.bunk_status == BunkStatus("available")
+					Bunk.bunk_status == BunkStatus.available
 				)
 			)
 
@@ -120,7 +121,7 @@ class BunkDb:
 					Bunk.dispensary_id == dispensary_id,
 					Bunk.room_number == room_number,
 					Bunk.bunk_number == bunk_number).values(
-					bunk_status=BunkStatus("busy")
+					bunk_status=BunkStatus.busy
 				)
 
 				result = await session.execute(update_bunk)
@@ -140,7 +141,7 @@ class BunkDb:
 	async def free_bunks_by_dispensary_id(self, dispensary_id: int) -> int | str:
 		async with self.async_session() as session:
 			stmt = select(func.count(Bunk.id)).where(
-				Bunk.dispensary_id == dispensary_id, Bunk.bunk_status == BunkStatus("available")
+				Bunk.dispensary_id == dispensary_id, Bunk.bunk_status == BunkStatus.available
 			)
 
 			result = await session.execute(stmt)

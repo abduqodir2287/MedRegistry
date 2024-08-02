@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import Query, HTTPException, status, Depends
 
 from src.domain.dispensary.schema import DispensaryPutModel, AllDispensaries, DispensaryResponseForGet
@@ -15,8 +17,12 @@ class DispensaryService(DispensariesFunctions):
 		super().__init__()
 
 
-	async def get_dispensaries_service(self) -> AllDispensaries:
-		all_dispensaries = await self.get_all_dispensaries()
+	async def get_dispensaries_service(
+			self, dispensary_id: Optional[int] = None,
+			dispensary_name: Optional[str] = None,
+			address: Optional[str] = None
+	) -> AllDispensaries:
+		all_dispensaries = await self.get_all_dispensaries(dispensary_id, dispensary_name, address)
 		logger.info("Dispensaries sent from DB")
 
 		return AllDispensaries(Dispensaries=all_dispensaries)

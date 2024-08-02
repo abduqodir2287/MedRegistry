@@ -1,17 +1,13 @@
 from typing import Optional
-
 from pydantic import BaseModel
-from enum import Enum
 
-class UserRole(str, Enum):
-	user = "user"
-	doctor = "doctor"
-	superadmin = "superadmin"
+from src.domain.enums import UserRole
 
 
 class UserModel(BaseModel):
 	firstname: str
 	lastname: str
+	password: str
 	job_title: Optional[str] = None
 	dispensary_id: int
 
@@ -21,7 +17,7 @@ class UserResponse(BaseModel):
 	firstname: str
 	lastname: str
 	job_title: Optional[str] = None
-	role: UserRole = "user"
+	role: UserRole = UserRole.user
 	dispensary_id: int
 
 class UserResponseForPut(BaseModel):
@@ -30,7 +26,7 @@ class UserResponseForPut(BaseModel):
 	firstname: str
 	lastname: str
 	job_title: Optional[str] = None
-	role: UserRole = "user"
+	role: UserRole = UserRole.user
 	dispensary_id: int
 
 class UserResponseForPost(BaseModel):

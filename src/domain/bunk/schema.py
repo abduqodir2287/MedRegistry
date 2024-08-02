@@ -1,13 +1,7 @@
 from pydantic import BaseModel
-from enum import Enum
 
 from src.domain.patient.schema import PatientResponse
-
-
-class BunkStatus(str, Enum):
-	available = "available"
-	busy = "busy"
-	not_available = "not_available"
+from src.domain.enums import BunkStatus
 
 
 class BunkModel(BaseModel):
@@ -17,7 +11,7 @@ class BunkModel(BaseModel):
 
 class BunkResponse(BaseModel):
 	id: int
-	bunk_status: BunkStatus = "available"
+	bunk_status: BunkStatus = BunkStatus.available
 	dispensary_id: int
 	room_number: int
 	bunk_number: int
@@ -25,7 +19,7 @@ class BunkResponse(BaseModel):
 
 class BunkResponseForGet(BaseModel):
 	id: int
-	bunk_status: BunkStatus = "available"
+	bunk_status: BunkStatus = BunkStatus.available
 	dispensary_id: int
 	room_number: int
 	bunk_number: int
@@ -35,7 +29,7 @@ class BunkResponseForGet(BaseModel):
 class BunkResponseForPut(BaseModel):
 	result: str = "Bunk Added"
 	id: int
-	bunk_status: BunkStatus = "available"
+	bunk_status: BunkStatus = BunkStatus.available
 	dispensary_id: int
 	room_number: int
 	bunk_number: int

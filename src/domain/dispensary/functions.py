@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import HTTPException, status
 from fastapi.encoders import jsonable_encoder
 import json
@@ -37,8 +39,12 @@ class DispensariesFunctions:
 		return rooms_list
 
 
-	async def get_all_dispensaries(self) -> list[DispensaryResponseForGet]:
-		dispensaries = await dispensary.select_all_dispensaries()
+	async def get_all_dispensaries(
+			self, dispensary_id: Optional[int] = None,
+			dispensary_name: Optional[str] = None,
+			address: Optional[str] = None
+	) -> list[DispensaryResponseForGet]:
+		dispensaries = await dispensary.select_dispensary_like(dispensary_id, dispensary_name, address)
 		dispensary_list = []
 
 		for d in dispensaries:

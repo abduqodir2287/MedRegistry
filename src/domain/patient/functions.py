@@ -1,11 +1,14 @@
 from datetime import datetime
+from typing import Optional
+
 from fastapi.encoders import jsonable_encoder
 from fastapi import HTTPException, status
 import json
 
 from src.configs.logger_setup import logger
-from src.domain.patient.schema import PatientResponse, PatientStatus, PatientModel
-from src.domain.bunk.schema import BunkResponse, BunkStatus
+from src.domain.patient.schema import PatientResponse, PatientModel
+from src.domain.bunk.schema import BunkResponse
+from src.domain.enums import BunkStatus, PatientStatus
 from src.infrastructure.database.postgres.create_db import patient, bunk, room
 from src.infrastructure.database.redis.client import RedisClient
 from src.configs.config import settings
@@ -18,8 +21,11 @@ class PatientsFunctions:
 
 
 	@staticmethod
-	async def get_all_patients_function() -> list:
-		all_patients = await patient.select_all_patients()
+	async def get_all_patients_function(
+			firstname: Optional[str] = None, lastname: Optional[str] = None,
+			dispensary_id: Optional[int] = None
+	) -> list:
+		all_patients = await patient.select_patients_like(firstname, lastname, dispensary_id)
 		patients_list = []
 
 		for patients in all_patients:
@@ -59,7 +65,7 @@ class PatientsFunctions:
 
 		redis_bunk_model = BunkResponse(
 			id=bunk_by_number.id,
-			bunk_status=BunkStatus("busy"),
+			bunk_status=BunkStatus.busy,
 			bunk_number=patient_model.bunk_number,
 			room_number=patient_model.bunk_number,
 			dispensary_id=patient_model.dispensary_id
@@ -112,8 +118,8 @@ class PatientsFunctions:
 		bunk_by_number = await bunk.select_bunk_by_number(dispensary_id, room_number, bunk_number)
 		booking = await bunk.update_bunk_status(dispensary_id, room_number, bunk_number)
 
-		busy = BunkStatus("busy")
-		not_available = BunkStatus("not_available")
+		busy = BunkStatus.busy
+		not_available = BunkStatus.not_available
 
 		if bunk_by_number:
 			if bunk_by_number.bunk_status == busy:

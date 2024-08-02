@@ -1,4 +1,5 @@
-from sqlalchemy import select, update
+from typing import Optional
+from sqlalchemy import select, update, and_
 
 from src.configs.config import settings
 from src.configs.logger_setup import logger
@@ -25,7 +26,35 @@ class PatientDb:
 			return result.scalars().all()
 
 
-	async def insert_patient(self, patient_model: PatientModel) -> tuple:
+	async def select_patients_like(
+			self, firstname: Optional[str] = None,
+			lastname: Optional[str] = None,
+			dispensary_id: Optional[int] = None
+	) -> list:
+		async with self.async_session() as session:
+			select_patients = select(Patient)
+
+			conditions = []
+
+			if firstname is not None:
+				conditions.append(Patient.firstname.like(f"%{firstname}%"))
+
+			if lastname is not None:
+				conditions.append(Patient.lastname.like(f"%{lastname}%"))
+
+			if dispensary_id is not None:
+				conditions.append(Patient.dispensary_id == dispensary_id)
+
+			if conditions:
+				select_patients = select_patients.where(and_(*conditions))
+
+			result = await session.execute(select_patients)
+
+			return result.scalars().all()
+
+
+
+	async def insert_patient(self, patient_model: PatientModel) -> int:
 		async with self.async_session() as session:
 			async with session.begin():
 

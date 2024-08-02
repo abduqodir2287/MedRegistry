@@ -16,8 +16,13 @@ class PatientsService(PatientsFunctions):
 		super().__init__()
 
 
-	async def get_all_patients_service(self) -> AllPatients:
-		patients_list = await self.get_all_patients_function()
+	async def get_all_patients_service(
+		self, firstname: Optional[str] = Query(None, description="The firstname of the patient"),
+		lastname: Optional[str] = Query(None, description="The lastname of the patient"),
+		dispensary_id: Optional[int] = Query(None, description="The dispensary id of the patient")
+	) -> AllPatients:
+
+		patients_list = await self.get_all_patients_function(firstname, lastname, dispensary_id)
 		logger.info("Patients sent from Db")
 
 		return AllPatients(Patients=patients_list)

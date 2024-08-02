@@ -1,10 +1,7 @@
 from datetime import datetime
-from enum import Enum
 from pydantic import BaseModel
 
-class PatientStatus(str, Enum):
-	on_treatment = "on_treatment"
-	discharged = "discharged"
+from src.domain.enums import PatientStatus
 
 
 class PatientModel(BaseModel):
@@ -20,7 +17,7 @@ class PatientResponse(BaseModel):
 	firstname: str
 	lastname: str
 	arrival_date: datetime
-	status: PatientStatus = "on_treatment"
+	status: PatientStatus = PatientStatus.on_treatment
 	dispensary_id: int
 	room_number: int
 	bunk_number: int
@@ -31,7 +28,7 @@ class PatientResponseForPut(BaseModel):
 	firstname: str
 	lastname: str
 	arrival_date: datetime
-	status: PatientStatus = "on_treatment"
+	status: PatientStatus = PatientStatus.on_treatment
 	dispensary_id: int
 	room_number: int
 	bunk_number: int

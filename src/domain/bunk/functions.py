@@ -5,8 +5,8 @@ from fastapi import HTTPException, status
 from src.configs.logger_setup import logger
 from src.domain.patient.schema import PatientResponse
 from src.infrastructure.database.postgres.create_db import bunk, room, patient
-from src.domain.bunk.schema import BunkResponse, BunkModel, BunkStatus, BunkResponseForGet
-from src.domain.room.schema import RoomStatus
+from src.domain.bunk.schema import BunkResponse, BunkModel, BunkResponseForGet
+from src.domain.enums import BunkStatus, RoomStatus
 from src.infrastructure.database.redis.client import RedisClient
 from src.configs.config import settings
 
@@ -116,8 +116,8 @@ class BunkFunctions:
 	async def check_room(room_number: int, dispensary_id: int) -> bool | None:
 		room_by_number = await room.select_room_by_number(room_number, dispensary_id)
 
-		busy = RoomStatus("busy")
-		not_available = RoomStatus("not_available")
+		busy = RoomStatus.busy
+		not_available = RoomStatus.not_available
 
 		if room_by_number:
 			if room_by_number.room_status == busy:

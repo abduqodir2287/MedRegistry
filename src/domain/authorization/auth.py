@@ -9,7 +9,7 @@ from src.configs.logger_setup import logger
 def create_access_token(data: dict) -> str:
 	to_encode = data.copy()
 
-	expire = datetime.now(timezone.utc) + timedelta(days=30)
+	expire = datetime.now(timezone.utc) + timedelta(days=1)
 	to_encode.update({"exp": expire})
 	auth_data = settings.GET_AUTH_DATA
 

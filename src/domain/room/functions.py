@@ -5,7 +5,8 @@ from fastapi import HTTPException, status
 from src.configs.logger_setup import logger
 from src.domain.bunk.schema import BunkResponse
 from src.infrastructure.database.postgres.create_db import room, bunk
-from src.domain.room.schema import RoomResponse, RoomModel, RoomStatus, RoomResponseForGet
+from src.domain.room.schema import RoomResponse, RoomModel, RoomResponseForGet
+from src.domain.enums import RoomStatus
 from src.infrastructure.database.redis.client import RedisClient
 from src.configs.config import settings
 

@@ -1,10 +1,12 @@
-from sqlalchemy import select, delete, update
+from typing import Optional
+from sqlalchemy import select, delete, update, and_
 
 from src.configs.config import settings
 from src.configs.logger_setup import logger
 from src.infrastructure.database.postgres.database import Base
 from src.infrastructure.database.postgres.models import User
-from src.domain.users.schema import UserModel, UserRole
+from src.domain.users.schema import UserModel
+from src.domain.enums import UserRole
 
 
 class UsersDb:
@@ -30,6 +32,7 @@ class UsersDb:
 				insert_into = User(
 					firstname=user_model.firstname.capitalize(),
 					lastname=user_model.lastname.capitalize(),
+					password=user_model.password,
 					job_title=user_model.job_title.capitalize() if user_model.job_title is not None else None,
 					dispensary_id=user_model.dispensary_id
 				)
@@ -90,12 +93,13 @@ class UsersDb:
 			return result.scalars().first()
 
 
-	async def create_user_superadmin(self, firstname: str, lastname: str, dispensary_id: int) -> int:
+	async def create_user_superadmin(self, firstname: str, lastname: str, password: str, dispensary_id: int) -> int:
 		async with self.async_session() as session:
 			async with session.begin():
 				insert_into = User(
 					firstname=firstname.capitalize(),
 					lastname=lastname.capitalize(),
+					password=password,
 					role="superadmin",
 					job_title="superadmin",
 					dispensary_id=dispensary_id
@@ -109,4 +113,35 @@ class UsersDb:
 
 			logger.info("User added to DB")
 			return user_id
+
+
+	async def select_users_like(
+			self, firstname: Optional[str] = None,
+			lastname: Optional[str] = None,
+			role: Optional[UserRole] = None,
+			dispensary_id: Optional[int] = None
+	) -> list:
+		async with self.async_session() as session:
+			select_patients = select(User)
+
+			conditions = []
+
+			if firstname is not None:
+				conditions.append(User.firstname.like(f"%{firstname}%"))
+
+			if lastname is not None:
+				conditions.append(User.lastname.like(f"%{lastname}%"))
+
+			if role is not None:
+				conditions.append(User.role == role)
+
+			if dispensary_id is not None:
+				conditions.append(User.dispensary_id == dispensary_id)
+
+			if conditions:
+				select_patients = select_patients.where(and_(*conditions))
+
+			result = await session.execute(select_patients)
+
+			return result.scalars().all()
 

@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import APIRouter, status, Query, Depends
 
 from src.domain.authorization.auth import get_token
@@ -11,8 +13,12 @@ dispensary_router = APIRouter(prefix="/Dispensary", tags=["Dispensaries"])
 dispensary_service = DispensaryService()
 
 @dispensary_router.get("", response_model=AllDispensaries, status_code=status.HTTP_200_OK)
-async def get_dispensaries() -> AllDispensaries:
-	return await dispensary_service.get_dispensaries_service()
+async def get_dispensaries(
+		dispensary_id: Optional[int] = Query(None, description="The Id of the dispensary"),
+		dispensary_name: Optional[str] = Query(None, description="The address of the dispensary"),
+		address: Optional[str] = Query(None, description="The address of the dispensary")
+) -> AllDispensaries:
+	return await dispensary_service.get_dispensaries_service(dispensary_id, dispensary_name, address)
 
 
 @dispensary_router.post("", response_model=DispensaryResponseForPost, status_code=status.HTTP_201_CREATED)

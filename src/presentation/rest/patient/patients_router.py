@@ -11,8 +11,12 @@ patient_service = PatientsService()
 
 
 @patient_router.get("", response_model=AllPatients, status_code=status.HTTP_200_OK)
-async def get_patients() -> AllPatients:
-	return await patient_service.get_all_patients_service()
+async def get_patients(
+		firstname: Optional[str] = Query(None, description="The firstname of the patient"),
+		lastname: Optional[str] = Query(None, description="The lastname of the patient"),
+		dispensary_id: Optional[int] = Query(None, description="The dispensary id of the patient")
+) -> AllPatients:
+	return await patient_service.get_all_patients_service(firstname, lastname, dispensary_id)
 
 
 @patient_router.post("", status_code=status.HTTP_201_CREATED, response_model=PatientResponseForPost)

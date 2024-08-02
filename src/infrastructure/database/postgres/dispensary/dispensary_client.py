@@ -1,4 +1,6 @@
-from sqlalchemy import select, delete, update, exists
+from typing import Optional
+
+from sqlalchemy import select, delete, update, exists, and_
 
 from src.configs.config import settings
 from src.infrastructure.database.postgres.database import Base
@@ -13,6 +15,7 @@ class DispensaryDb:
 		self.engine = Base.engine
 		self.metadata = Base.metadata
 		self.async_session = Base.async_session
+
 
 	async def insert_dispensary(self, dispensary: DispensaryModel) -> tuple:
 		async with self.async_session() as session:
@@ -29,7 +32,8 @@ class DispensaryDb:
 
 			logger.info("Dispensary added to DB")
 			return dispensary_id
-		
+
+
 	async def select_all_dispensaries(self) -> list:
 		async with self.async_session() as session:
 			select_tasks = select(Dispensary)
@@ -103,5 +107,32 @@ class DispensaryDb:
 
 			if task:
 				return task.active
+
+
+	async def select_dispensary_like(
+			self, dispensary_id: Optional[int] = None,
+			dispensary_name: Optional[str] = None,
+			address: Optional[str] = None
+	) -> list:
+		async with self.async_session() as session:
+			select_patients = select(Dispensary)
+
+			conditions = []
+
+			if dispensary_id is not None:
+				conditions.append(Dispensary.id == dispensary_id)
+
+			if dispensary_name is not None:
+				conditions.append(Dispensary.dispensary_name.like(f"%{dispensary_name}%"))
+
+			if address is not None:
+				conditions.append(Dispensary.address.like(f"%{address}%"))
+
+			if conditions:
+				select_patients = select_patients.where(and_(*conditions))
+
+			result = await session.execute(select_patients)
+
+			return result.scalars().all()
 
 

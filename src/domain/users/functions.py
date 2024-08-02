@@ -1,10 +1,13 @@
+from typing import Optional
+
 from fastapi.encoders import jsonable_encoder
 from fastapi import HTTPException, status
 import json
 
 
 from src.configs.logger_setup import logger
-from src.domain.users.schema import UserResponse, UserModel, UserRole
+from src.domain.users.schema import UserResponse, UserModel
+from src.domain.enums import UserRole
 from src.infrastructure.database.postgres.create_db import users
 from src.infrastructure.database.redis.client import RedisClient
 from src.configs.config import settings
@@ -16,8 +19,13 @@ class UsersFunctions:
 
 
 	@staticmethod
-	async def get_all_users_function() -> list:
-		all_users = await users.select_all_users()
+	async def get_all_users_function(
+			firstname: Optional[str] = None,
+			lastname: Optional[str] = None,
+			role: Optional[UserRole] = None,
+			dispensary_id: Optional[int] = None
+	) -> list:
+		all_users = await users.select_users_like(firstname, lastname, role, dispensary_id)
 		users_list = []
 
 		for user in all_users:
