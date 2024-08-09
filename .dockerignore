@@ -7,6 +7,6 @@ tests/
 jwt_generator.py
 /main.py
 patient_discharge.pdf
-pdf_create.py
+src/domain/crone/pdf_create.py
 /README.md
 task.md

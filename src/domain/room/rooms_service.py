@@ -1,5 +1,8 @@
+from typing import Optional
+
 from fastapi import Query, HTTPException, status, Depends
 
+from src.domain.enums import RoomStatus
 from src.domain.room.schema import AllRooms, RoomModel, RoomResponseForGet, RoomResponseForPost
 from src.configs.logger_setup import logger
 from src.domain.room.functions import RoomsFunctions
@@ -13,8 +16,11 @@ class RoomsService(RoomsFunctions):
 		super().__init__()
 
 
-	async def get_rooms_service(self) -> AllRooms:
-		all_rooms = await self.get_rooms_function()
+	async def get_rooms_service(
+			self, room_status: Optional[RoomStatus] = None,
+			dispensary_id: Optional[int] = None
+	) -> AllRooms:
+		all_rooms = await self.get_rooms_function(room_status, dispensary_id)
 		logger.info("Rooms sent from DB")
 
 		return AllRooms(Rooms=all_rooms)

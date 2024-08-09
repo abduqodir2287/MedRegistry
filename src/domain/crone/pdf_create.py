@@ -2,10 +2,28 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 
+from src.domain.patient.schema import PatientDischarge
+from src.domain.dispensary.schema import DispensaryModel
 
-def create_patient_discharge_pdf(filename, patient_info, discharge_summary, dispensary_info):
 
-	doc = SimpleDocTemplate(filename, pagesize=A4)
+def create_patient_discharge_pdf(filename: str, patient_info: PatientDischarge, dispensary_info: DispensaryModel) -> None:
+	discharge_summary = """
+	Bemor gipertonik inqiroz tashxisi bilan kasalxonaga yotqizilgan.
+	
+	Davolash:
+	Bemor antihipertenziv dorilarni qo‘llash orqali davolandi.
+	
+	Tavsiyalar:
+	
+
+	Terapiyani davom ettirish tavsiya etiladi.
+	Davolanish jarayonida bemor terapevt nazorati ostida bo‘lishi kerak.
+	Ambulatoriya asosida davolanish tavsiya etiladi.
+	"""
+
+	phone_number = "78 120 00 33"
+
+	doc = SimpleDocTemplate(filename + ".pdf", pagesize=A4)
 	elements = []
 
 
@@ -32,7 +50,7 @@ def create_patient_discharge_pdf(filename, patient_info, discharge_summary, disp
 	)
 
 	dispensary_name = f"""
-    <b>Dispanser nomi:</b> {dispensary_info['name']}<br/>
+    <b>Dispanser nomi:</b> {dispensary_info.dispensary_name}<br/>
     """
 
 	dispensary_info_paragraph = Paragraph(dispensary_name, dispensary_addres)
@@ -62,14 +80,14 @@ def create_patient_discharge_pdf(filename, patient_info, discharge_summary, disp
 
 
 	patient_info_text = f"""
-    <b>ID:</b> {patient_info['id']}<br/>
-    <b>Ism:</b> {patient_info['firstname']}<br/>
-    <b>Familya:</b> {patient_info['lastname']}<br/>
-    <b>Kelgan sana:</b> {patient_info['arrival_date']}<br/>
-    <b>Dispanser ID:</b> {patient_info['dispensary_id']}<br/>
-    <b>Palata raqami:</b> {patient_info['room_number']}<br/>
-    <b>Yotoq raqami:</b> {patient_info['bunk_number']}<br/>
-    <b>Bayonot sanasi:</b> {patient_info['date_of_statement']}<br/>
+    <b>ID:</b> {patient_info.id}<br/>
+    <b>Ism:</b> {patient_info.firstname}<br/>
+    <b>Familya:</b> {patient_info.lastname}<br/>
+    <b>Kelgan sana:</b> {patient_info.arrival_date}<br/>
+    <b>Dispanser ID:</b> {patient_info.dispensary_id}<br/>
+    <b>Palata raqami:</b> {patient_info.room_number}<br/>
+    <b>Yotoq raqami:</b> {patient_info.bunk_number}<br/>
+    <b>Bayonot sanasi:</b> {patient_info.discharge_date}<br/>
     """
 	patient_info_paragraph = Paragraph(patient_info_text, info_style)
 	elements.append(patient_info_paragraph)
@@ -94,8 +112,8 @@ def create_patient_discharge_pdf(filename, patient_info, discharge_summary, disp
 	)
 
 	dispensary_address_name = f"""
-	    <b>Manzil:</b> {dispensary_info['address']}<br/>
-	    <b>Telefon raqami:</b> {dispensary_info['phone_number']}<br/>
+	    <b>Manzil:</b> {dispensary_info.address}<br/>
+	    <b>Telefon raqami:</b> {phone_number}<br/>
 	    """
 
 	dispensary_info_paragraph = Paragraph(dispensary_address_name, dispensary_address)
@@ -105,38 +123,27 @@ def create_patient_discharge_pdf(filename, patient_info, discharge_summary, disp
 	doc.build(elements)
 
 
-test_patient_info = {
-	"id": 12345,
-	"firstname": "Abduqodir",
-	"lastname": "Abduqodirov",
-	"arrival_date": "01.07.2024",
-	"dispensary_id": 6789,
-	"room_number": 101,
-	"bunk_number": 2,
-	"date_of_statement": "11.07.2024",
-	"name": "Medion Innovation",
-	"address": "Toshkent, Abdulla Qodiriy ko'chasi 39/1",
-	"phone_number": "78 120 00 33",
-}
 
-test_discharge_summary = """
-Bemor gipertonik inqiroz tashxisi bilan kasalxonaga yotqizilgan.
+# test_patient_info = {
+# 	"id": 12345,
+# 	"firstname": "Abduqodir",
+# 	"lastname": "Abduqodirov",
+# 	"arrival_date": "01.07.2024",
+# 	"dispensary_id": 6789,
+# 	"room_number": 101,
+# 	"bunk_number": 2,
+# 	"date_of_statement": "11.07.2024",
+# 	"name": "Medion Innovation",
+# 	"address": "Toshkent, Abdulla Qodiriy ko'chasi 39/1",
+# 	"phone_number": "78 120 00 33",
+# }
 
-Davolash:
-Bemor antihipertenziv dorilarni qo‘llash orqali davolandi.
 
-Tavsiyalar:
-
-Terapiyani davom ettirish tavsiya etiladi.
-Davolanish jarayonida bemor terapevt nazorati ostida bo‘lishi kerak.
-Ambulatoriya asosida davolanish tavsiya etiladi.
-
-"""
-
-test_dispensary_info = {
-	"name": "Medion Innovation",
-	"address": "Toshkent shahar, Abdulla Qodiriy ko'chasi 39/1",
-	"phone_number": "78 120 00 33"
-}
-
-create_patient_discharge_pdf("patient_discharge.pdf", test_patient_info, test_discharge_summary, test_dispensary_info)
+# test_dispensary_info = {
+# 	"name": "Medion Innovation",
+# 	"address": "Toshkent shahar, Abdulla Qodiriy ko'chasi 39/1",
+# 	"phone_number": "78 120 00 33"
+# }
+#
+# create_patient_discharge_pdf("../../../patient_discharge.pdf",
+# test_patient_info, test_discharge_summary, test_dispensary_info)

@@ -1,9 +1,11 @@
-from sqlalchemy import select, delete, exists
+from typing import Optional
+from sqlalchemy import select, delete, exists, and_
 
 from src.configs.config import settings
 from src.infrastructure.database.postgres.database import Base
 from src.infrastructure.database.postgres.models import Room
 from src.domain.room.schema import RoomModel
+from src.domain.enums import RoomStatus
 from src.configs.logger_setup import logger
 
 
@@ -90,4 +92,27 @@ class RoomDb:
 
 			if task:
 				return task
+
+
+	async def select_room_like(
+			self, room_status: Optional[RoomStatus] = None,
+			dispensary_id: Optional[int] = None
+	) -> list:
+		async with self.async_session() as session:
+			select_patients = select(Room)
+
+			conditions = []
+
+			if room_status is not None:
+				conditions.append(Room.room_status == room_status)
+
+			if dispensary_id is not None:
+				conditions.append(Room.dispensary_id == dispensary_id)
+
+			if conditions:
+				select_patients = select_patients.where(and_(*conditions))
+
+			result = await session.execute(select_patients)
+
+			return result.scalars().all()
 

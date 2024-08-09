@@ -2,6 +2,7 @@ from typing import Optional
 from fastapi import Query, HTTPException, status, Depends
 
 from src.configs.logger_setup import logger
+from src.domain.enums import PatientStatus
 from src.domain.patient.functions import PatientsFunctions
 from src.domain.patient.schema import AllPatients, PatientResponseForPut, PatientModel, PatientResponse, \
 	PatientResponseForPost
@@ -112,4 +113,38 @@ class PatientsService(PatientsFunctions):
 			room_number=patient_by_id.room_number,
 			bunk_number=patient_by_id.bunk_number
 		)
+
+	@staticmethod
+	async def update_patient_status_service(
+		patient_id: int, token: str = Depends(get_token)
+	) -> PatientResponseForPut:
+
+		patient_by_id = await patient.select_patient_by_id(patient_id)
+
+		if patient_by_id is None:
+			logger.warning("Patient not found")
+			raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Patient not found")
+
+		await check_user_is_doctor(patient_by_id.dispensary_id, token)
+
+		if patient_by_id.status != PatientStatus.discharged:
+			logger.warning("the patent is already in the Dispensary")
+			raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="the patent is already in the Dispensary")
+
+		update = await patient.update_patient_status(patient_id)
+
+		logger.info("Patient updated successfully")
+
+		if update:
+			return PatientResponseForPut(
+				result="Patients status updated successfully",
+				id=patient_id,
+				firstname=patient_by_id.firstname,
+				lastname=patient_by_id.lastname,
+				arrival_date=patient_by_id.arrival_date,
+				status=patient_by_id.status,
+				dispensary_id=patient_by_id.dispensary_id,
+				room_number=patient_by_id.room_number,
+				bunk_number=patient_by_id.bunk_number
+			)
 

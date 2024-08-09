@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import Query, HTTPException, status, Depends
 
 from src.domain.bunk.schema import BunkModel, BunkResponseForPut, BunkResponseForPost
@@ -15,8 +17,12 @@ class BunkService(BunkFunctions):
 		super().__init__()
 
 
-	async def get_bunks_service(self) -> AllBunks:
-		all_bunks = await self.get_bunks_function()
+	async def get_bunks_service(
+			self, bunk_status: Optional[BunkStatus] = None,
+			room_number: Optional[int] = None,
+			dispensary_id: Optional[int] = None
+	) -> AllBunks:
+		all_bunks = await self.get_bunks_function(bunk_status, room_number, dispensary_id)
 		logger.info("Bunks sent from DB")
 
 		return AllBunks(Bunks=all_bunks)

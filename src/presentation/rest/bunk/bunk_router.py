@@ -1,7 +1,10 @@
-from fastapi import APIRouter, status, Depends
+from typing import Optional
+
+from fastapi import APIRouter, status, Depends, Query
 
 from src.domain.bunk.bunk_service import BunkService
 from src.domain.bunk.schema import AllBunks, BunkResponseForGet, AvailableBunks, BunkResponseForPost
+from src.domain.enums import BunkStatus
 from src.domain.authorization.auth import get_token
 
 bunk_router = APIRouter(prefix="/Bunk", tags=["Bunks"])
@@ -10,8 +13,12 @@ bunk_service = BunkService()
 
 
 @bunk_router.get("", response_model=AllBunks, status_code=status.HTTP_200_OK)
-async def get_bunks() -> AllBunks:
-	return await bunk_service.get_bunks_service()
+async def get_bunks(
+		bunk_status: BunkStatus = Query(None, description="The status of the Bunk"),
+		room_number: Optional[int] = Query(None, description="The room number of the bunk"),
+		dispensary_id: Optional[int] = Query(None, description="The dispensary number of the bunk")
+) -> AllBunks:
+	return await bunk_service.get_bunks_service(bunk_status, room_number, dispensary_id)
 
 
 @bunk_router.post("", response_model=BunkResponseForPost, status_code=status.HTTP_201_CREATED)

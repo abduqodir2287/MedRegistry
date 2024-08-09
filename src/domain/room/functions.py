@@ -1,4 +1,6 @@
 import json
+from typing import Optional
+
 from fastapi.encoders import jsonable_encoder
 from fastapi import HTTPException, status
 
@@ -17,9 +19,13 @@ class RoomsFunctions:
 		self.redis_client = RedisClient(settings.REDIS_ROOM)
 
 
-	async def get_rooms_function(self) -> list[RoomResponseForGet]:
+	async def get_rooms_function(
+			self, room_status: Optional[RoomStatus] = None,
+			dispensary_id: Optional[int] = None
+	) -> list[RoomResponseForGet]:
 		rooms_list = []
-		for rooms in await room.select_all_rooms():
+
+		for rooms in await room.select_room_like(room_status, dispensary_id):
 			returned_room = RoomResponseForGet(
 				id=rooms.id,
 				room_status=rooms.room_status,
@@ -27,6 +33,7 @@ class RoomsFunctions:
 				dispensary_id=rooms.dispensary_id,
 				bunks=await self.get_bunk_by_room_number(rooms.dispensary_id, rooms.room_number)
 			)
+
 			rooms_list.append(returned_room)
 
 		return rooms_list

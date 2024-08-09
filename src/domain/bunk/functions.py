@@ -1,4 +1,6 @@
 import json
+from typing import Optional
+
 from fastapi.encoders import jsonable_encoder
 from fastapi import HTTPException, status
 
@@ -17,9 +19,14 @@ class BunkFunctions:
 		self.redis_client = RedisClient(settings.REDIS_BUNK)
 
 
-	async def get_bunks_function(self) -> list[BunkResponseForGet]:
+	async def get_bunks_function(
+			self, bunk_status: Optional[BunkStatus] = None,
+			room_number: Optional[int] = None,
+			dispensary_id: Optional[int] = None
+	) -> list[BunkResponseForGet]:
 		bunks_list = []
-		for bunks in await bunk.select_all_bunks():
+
+		for bunks in await bunk.select_bunks_like(bunk_status, room_number, dispensary_id):
 			returned_bunks = BunkResponseForGet(
 				id=bunks.id,
 				bunk_status=bunks.bunk_status,
@@ -28,6 +35,7 @@ class BunkFunctions:
 				bunk_number=bunks.bunk_number,
 				patient=await self.get_patients_for_bunks(bunks.dispensary_id, bunks.room_number, bunks.bunk_number)
 			)
+
 			bunks_list.append(returned_bunks)
 
 		logger.info("Bunks sent from DB")

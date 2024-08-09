@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     REDIS_PATIENTS: int
     ALGORITHM: str
     SECRET_KEY: str
+    CRONE_TIME_MINUTE: int
 
 
 # Создайте .env файл и напишите туда свои данные,

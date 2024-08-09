@@ -13,9 +13,9 @@ class Dispensary(Base):
     address = Column(Text)
     active = Column(Boolean, nullable=False, server_default="true")
 
-    rooms = relationship("Room", order_by="Room.id", back_populates="dispensary")
+    rooms = relationship("Room", order_by="Room.id", back_populates="dispensary", overlaps="dispensary,patients")
     users = relationship("User", order_by="User.id", back_populates="dispensary")
-    patients = relationship("Patient", order_by="Patient.id", back_populates="dispensary")
+    patients = relationship("Patient", order_by="Patient.id", back_populates="dispensary", overlaps="rooms,bunks")
 
 
 class Room(Base):
@@ -30,9 +30,9 @@ class Room(Base):
         UniqueConstraint('room_number', 'dispensary_id', name='uix_room_number_dispensary_id'),
     )
 
-    dispensary = relationship("Dispensary", back_populates="rooms")
-    bunks = relationship("Bunk", order_by="Bunk.id", back_populates="room")
-    patients = relationship("Patient", order_by="Patient.id", back_populates="room")
+    dispensary = relationship("Dispensary", back_populates="rooms", overlaps="patients")
+    bunks = relationship("Bunk", order_by="Bunk.id", back_populates="room", overlaps="patients")
+    patients = relationship("Patient", order_by="Patient.id", back_populates="room", overlaps="dispensary,bunks")
 
 
 class Bunk(Base):
@@ -50,9 +50,11 @@ class Bunk(Base):
     )
 
     room = relationship('Room',
-                        primaryjoin="and_(Bunk.room_number==Room.room_number, Bunk.dispensary_id==Room.dispensary_id)")
+                        primaryjoin="and_(Bunk.room_number==Room.room_number, Bunk.dispensary_id==Room.dispensary_id)",
+                        back_populates="bunks",
+                        overlaps="patients")
 
-    patients = relationship("Patient", order_by="Patient.id", back_populates="bunk")
+    patients = relationship("Patient", order_by="Patient.id", back_populates="bunk", overlaps="room,dispensary")
 
 
 class User(Base):
@@ -75,7 +77,7 @@ class Patient(Base):
     id = Column(Integer, primary_key=True)
     firstname = Column(Text, nullable=False)
     lastname = Column(Text, nullable=False)
-    arrival_date = Column(TIMESTAMP, server_default=func.now())
+    arrival_date = Column(TIMESTAMP(timezone=True), server_default=func.now())
     status = Column(Text, default="on_treatment", nullable=False)
     dispensary_id = Column(Integer, ForeignKey("drug_dispensary.id"), nullable=False)
     room_number = Column(Integer, nullable=False)
@@ -92,19 +94,20 @@ class Patient(Base):
         ),
     )
 
-    dispensary = relationship("Dispensary", back_populates="patients")
+    dispensary = relationship("Dispensary", back_populates="patients", overlaps="rooms,bunks")
 
     room = relationship(
         "Room",
         primaryjoin="and_(Patient.room_number==Room.room_number, "
                     "Patient.dispensary_id==Room.dispensary_id)",
-        back_populates="patients"
+        back_populates="patients",
+        overlaps="dispensary,bunks"
     )
 
     bunk = relationship(
         "Bunk",
         primaryjoin="and_(Patient.bunk_number==Bunk.bunk_number, "
                     "Patient.room_number==Bunk.room_number, Patient.dispensary_id==Bunk.dispensary_id)",
-        back_populates="patients"
+        back_populates="patients",
+        overlaps="room,dispensary"
     )
-

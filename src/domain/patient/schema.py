@@ -41,3 +41,13 @@ class PatientResponseForPost(BaseModel):
 class AllPatients(BaseModel):
 	Patients: list[PatientResponse]
 
+class PatientDischarge(BaseModel):
+	id: int
+	firstname: str
+	lastname: str
+	arrival_date: datetime
+	dispensary_id: int
+	room_number: int
+	bunk_number: int
+	discharge_date: datetime
+

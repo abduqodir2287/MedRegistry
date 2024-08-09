@@ -1,4 +1,5 @@
-from sqlalchemy import select, update, exists, func
+from typing import Optional
+from sqlalchemy import select, update, exists, func, and_
 
 from src.configs.config import settings
 from src.infrastructure.database.postgres.database import Base
@@ -151,4 +152,31 @@ class BunkDb:
 				return task
 
 			return "There is not a single free bed at this dispensary yet"
+
+
+	async def select_bunks_like(
+			self, bunk_status: Optional[BunkStatus] = None,
+			room_number: Optional[int] = None,
+			dispensary_id: Optional[int] = None
+	) -> list:
+		async with self.async_session() as session:
+			select_patients = select(Bunk)
+
+			conditions = []
+
+			if bunk_status is not None:
+				conditions.append(Bunk.bunk_status == bunk_status)
+
+			if room_number is not None:
+				conditions.append(Bunk.room_number == room_number)
+
+			if dispensary_id is not None:
+				conditions.append(Bunk.dispensary_id == dispensary_id)
+
+			if conditions:
+				select_patients = select_patients.where(and_(*conditions))
+
+			result = await session.execute(select_patients)
+
+			return result.scalars().all()
 

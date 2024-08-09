@@ -45,3 +45,10 @@ async def update_patient(
 	return await patient_service.update_patient_service(patient_id, firstname, lastname, token)
 
 
+@patient_router.patch("/comeback/{patient_id}", status_code=status.HTTP_200_OK, response_model=PatientResponseForPut)
+async def update_patient(
+		patient_id: int, token: str = Depends(get_token)
+) -> PatientResponseForPut:
+	return await patient_service.update_patient_status_service(patient_id, token)
+
+

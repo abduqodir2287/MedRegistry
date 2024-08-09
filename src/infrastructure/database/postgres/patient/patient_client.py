@@ -1,11 +1,14 @@
+from datetime import timedelta, datetime
 from typing import Optional
 from sqlalchemy import select, update, and_
+import pytz
 
 from src.configs.config import settings
 from src.configs.logger_setup import logger
+from src.domain.enums import PatientStatus
 from src.infrastructure.database.postgres.database import Base
 from src.infrastructure.database.postgres.models import Patient
-from src.domain.patient.schema import PatientModel
+from src.domain.patient.schema import PatientModel, PatientResponse
 
 
 class PatientDb:
@@ -112,5 +115,54 @@ class PatientDb:
 
 			return result.scalars().first()
 
+	async def update_patient_status_crone(self) -> list[PatientResponse] | None:
+		async with self.async_session() as session:
+			async with session.begin():
+				local_time = datetime.now()
+				term = local_time.astimezone(pytz.utc) - timedelta(minutes=settings.LENGTH_OF_STAY)
+
+				result = await session.execute(select(Patient).where(
+					Patient.status != PatientStatus.discharged,
+					Patient.arrival_date <= term
+				))
+
+				patients = result.scalars().all()
+
+				patients_list = []
+
+				for p in patients:
+					returned_patient = PatientResponse(
+						id=p.id,
+						firstname=p.firstname,
+						lastname=p.lastname,
+						status=p.status,
+						arrival_date=p.arrival_date,
+						dispensary_id=p.dispensary_id,
+						room_number=p.room_number,
+						bunk_number=p.bunk_number
+					)
+
+					patients_list.append(returned_patient)
+
+				for patient in patients:
+					patient.status = PatientStatus.discharged
+					logger.info(f"Patient with id {patient.id} discharged")
+
+				await session.commit()
+
+				return patients_list
+
+	async def update_patient_status(self, patient_id: int) -> bool | None:
+		async with self.async_session() as session:
+			async with session.begin():
+				update_patient = update(Patient).where(Patient.id == patient_id).values(
+					status=PatientStatus.on_treatment
+				)
+
+				result = await session.execute(update_patient)
+				await session.commit()
+
+				if result.rowcount > 0:
+					return True
 
 
