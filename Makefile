@@ -1,5 +1,5 @@
 start-service:
-	uvicorn src.main:app --reload --port 8001
+	uvicorn src.main:app --reload --port 8000
 
 lint:
 	ruff check --fix
