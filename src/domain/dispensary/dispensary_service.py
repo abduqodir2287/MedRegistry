@@ -1,5 +1,4 @@
 from typing import Optional
-
 from fastapi import Query, HTTPException, status, Depends
 
 from src.domain.dispensary.schema import DispensaryPutModel, AllDispensaries, DispensaryResponseForGet

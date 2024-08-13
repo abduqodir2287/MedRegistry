@@ -10,6 +10,7 @@ class PatientModel(BaseModel):
 	dispensary_id: int
 	room_number: int
 	bunk_number: int
+	days_of_treatment: int
 
 
 class PatientResponse(BaseModel):
@@ -21,6 +22,8 @@ class PatientResponse(BaseModel):
 	dispensary_id: int
 	room_number: int
 	bunk_number: int
+	days_left: str
+
 
 class PatientResponseForPut(BaseModel):
 	result: str = "Patient added successfully"
@@ -32,6 +35,7 @@ class PatientResponseForPut(BaseModel):
 	dispensary_id: int
 	room_number: int
 	bunk_number: int
+	days_left: str
 
 
 class PatientResponseForPost(BaseModel):

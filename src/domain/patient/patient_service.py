@@ -35,6 +35,7 @@ class PatientsService(PatientsFunctions):
 			dispensary_id: int = Query(..., description="The dispensary id of the patient"),
 			room_number: int = Query(..., description="The room number of the patient"),
 			bunk_number: int = Query(..., description="The bunk number of the patient"),
+			days_of_treatment: int = Query(..., description="How many days should the patient be treated", le=30),
 			token: str = Depends(get_token)
 	) -> PatientResponseForPost:
 
@@ -45,7 +46,8 @@ class PatientsService(PatientsFunctions):
 			lastname=lastname,
 			dispensary_id=dispensary_id,
 			room_number=room_number,
-			bunk_number=bunk_number
+			bunk_number=bunk_number,
+			days_of_treatment=days_of_treatment
 		)
 
 		exist_dispensary = await dispensary.dispensary_exists(dispensary_id)
@@ -76,9 +78,8 @@ class PatientsService(PatientsFunctions):
 		return patient_by_id
 
 
-	@staticmethod
 	async def update_patient_service(
-		patient_id: int, firstname: Optional[str],
+		self, patient_id: int, firstname: Optional[str],
 		lastname: Optional[str], token: str = Depends(get_token)
 ) -> PatientResponseForPut:
 
@@ -100,6 +101,8 @@ class PatientsService(PatientsFunctions):
 			lastname if lastname is not None else patient_by_id.lastname
 		)
 
+		days_left = await self.days_left(patient_by_id.days_of_treatment, patient_by_id.arrival_date)
+
 		logger.info("Patient updated successfully")
 
 		return PatientResponseForPut(
@@ -111,12 +114,13 @@ class PatientsService(PatientsFunctions):
 			status=patient_by_id.status,
 			dispensary_id=patient_by_id.dispensary_id,
 			room_number=patient_by_id.room_number,
-			bunk_number=patient_by_id.bunk_number
+			bunk_number=patient_by_id.bunk_number,
+			days_left=str(days_left)
 		)
 
-	@staticmethod
+
 	async def update_patient_status_service(
-		patient_id: int, token: str = Depends(get_token)
+		self, patient_id: int, token: str = Depends(get_token)
 	) -> PatientResponseForPut:
 
 		patient_by_id = await patient.select_patient_by_id(patient_id)
@@ -130,6 +134,8 @@ class PatientsService(PatientsFunctions):
 		if patient_by_id.status != PatientStatus.discharged:
 			logger.warning("the patent is already in the Dispensary")
 			raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="the patent is already in the Dispensary")
+
+		days_left = await self.days_left(patient_by_id.days_of_treatment, patient_by_id.arrival_date)
 
 		update = await patient.update_patient_status(patient_id)
 
@@ -145,6 +151,7 @@ class PatientsService(PatientsFunctions):
 				status=patient_by_id.status,
 				dispensary_id=patient_by_id.dispensary_id,
 				room_number=patient_by_id.room_number,
-				bunk_number=patient_by_id.bunk_number
+				bunk_number=patient_by_id.bunk_number,
+				days_left=str(days_left)
 			)
 

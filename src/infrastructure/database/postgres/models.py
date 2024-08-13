@@ -82,6 +82,7 @@ class Patient(Base):
     dispensary_id = Column(Integer, ForeignKey("drug_dispensary.id"), nullable=False)
     room_number = Column(Integer, nullable=False)
     bunk_number = Column(Integer, nullable=False)
+    days_of_treatment = Column(Integer, nullable=False)
 
     __table_args__ = (
         ForeignKeyConstraint(

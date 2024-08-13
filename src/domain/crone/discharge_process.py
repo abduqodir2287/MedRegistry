@@ -1,30 +1,35 @@
 from datetime import datetime
-import pytz
 
+from src.configs.logger_setup import logger
 from src.domain.crone.pdf_create import create_patient_discharge_pdf
 from src.domain.dispensary.schema import DispensaryModel
 from src.infrastructure.database.postgres.create_db import patient, dispensary
 from src.domain.patient.schema import PatientDischarge
+from src.domain.patient.functions import PatientsFunctions
 
+service = PatientsFunctions()
 
-async def discharge_crone() -> None:
-    discharged_patients = await patient.update_patient_status_crone()
-    local_time = datetime.now()
-    utc = local_time.astimezone(pytz.utc)
+async def discharge_patients_crone() -> None:
+    all_patients = await patient.select_all_patients()
 
-    if discharged_patients:
-        for get_patient in discharged_patients:
-            get_dispensary = await dispensary.select_dispensary_by_id(get_patient.dispensary_id)
+    current_time = datetime.now()
+
+    for p in all_patients:
+        term = await service.day_of_discharge(p.days_of_treatment, p.arrival_date)
+
+        if current_time >= term:
+            await patient.discharge_patient(p.id)
+            get_dispensary = await dispensary.select_dispensary_by_id(p.dispensary_id)
 
             patient_model = PatientDischarge(
-                id=get_patient.id,
-                firstname=get_patient.firstname,
-                lastname=get_patient.lastname,
-                arrival_date=get_patient.arrival_date,
-                dispensary_id=get_patient.dispensary_id,
-                room_number=get_patient.room_number,
-                bunk_number=get_patient.bunk_number,
-                discharge_date=utc
+                id=p.id,
+                firstname=p.firstname,
+                lastname=p.lastname,
+                arrival_date=p.arrival_date,
+                dispensary_id=p.dispensary_id,
+                room_number=p.room_number,
+                bunk_number=p.bunk_number,
+                discharge_date=term
             )
 
             dispensary_model = DispensaryModel(
@@ -33,7 +38,9 @@ async def discharge_crone() -> None:
             )
 
             create_patient_discharge_pdf(
-	            get_patient.firstname + "_" + get_patient.lastname,
-	            patient_model, dispensary_model
+                f"{p.firstname}_{p.lastname}",
+                patient_model, dispensary_model
             )
+
+            logger.info("Crone checked")
 

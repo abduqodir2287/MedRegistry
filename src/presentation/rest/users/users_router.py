@@ -1,6 +1,5 @@
 from typing import Optional
-
-from fastapi import APIRouter, Query, status, Response, Depends
+from fastapi import APIRouter, Query, status, Response, Depends, Request
 
 from src.domain.authorization.auth import get_token
 from src.domain.users.schema import UserResponse, AllUsers, UserResponseForPut, UserResponseForPost
@@ -64,6 +63,6 @@ async def update_user_role(
 
 
 @users_router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
-async def logout_user(response: Response) -> None:
-	response.delete_cookie(key="user_access_token")
+async def logout_user(request: Request, response: Response) -> None:
+	await users_service.logout_service(request, response)
 

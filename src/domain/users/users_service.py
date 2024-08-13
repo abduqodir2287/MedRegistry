@@ -1,5 +1,5 @@
 from typing import Optional
-from fastapi import Query, HTTPException, status, Response, Depends
+from fastapi import Query, HTTPException, status, Response, Depends, Request
 
 from src.configs.logger_setup import logger
 from src.domain.users.functions import UsersFunctions
@@ -137,5 +137,18 @@ class UsersService(UsersFunctions):
 				role=role,
 				dispensary_id=user_by_id.dispensary_id
 			)
+
+
+	@staticmethod
+	async def logout_service(request: Request, response: Response) -> None:
+		access_token = request.cookies.get("user_access_token")
+
+		if not access_token:
+			logger.warning("Token not found")
+			raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="You are not authorized")
+
+		response.delete_cookie(key="user_access_token")
+
+		logger.info("User logged out successfully")
 
 

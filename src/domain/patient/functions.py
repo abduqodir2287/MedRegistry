@@ -1,14 +1,12 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
 
-from fastapi.encoders import jsonable_encoder
+import pytz
 from fastapi import HTTPException, status
-import json
 
 from src.configs.logger_setup import logger
-from src.domain.patient.schema import PatientResponse, PatientModel
-from src.domain.bunk.schema import BunkResponse
-from src.domain.enums import BunkStatus, PatientStatus
+from src.domain.patient.schema import PatientResponse
+from src.domain.enums import BunkStatus
 from src.infrastructure.database.postgres.create_db import patient, bunk, room
 from src.infrastructure.database.redis.client import RedisClient
 from src.configs.config import settings
@@ -19,16 +17,16 @@ class PatientsFunctions:
 		self.redis_client = RedisClient(settings.REDIS_PATIENTS)
 		self.redis_bunk_client = RedisClient(settings.REDIS_BUNK)
 
-
-	@staticmethod
 	async def get_all_patients_function(
-			firstname: Optional[str] = None, lastname: Optional[str] = None,
+			self, firstname: Optional[str] = None, lastname: Optional[str] = None,
 			dispensary_id: Optional[int] = None
-	) -> list:
+	) -> list[PatientResponse]:
 		all_patients = await patient.select_patients_like(firstname, lastname, dispensary_id)
 		patients_list = []
 
 		for patients in all_patients:
+			days_left = await self.days_left(patients.days_of_treatment, patients.arrival_date)
+
 			returned_patients = PatientResponse(
 				id=patients.id,
 				firstname=patients.firstname,
@@ -37,53 +35,13 @@ class PatientsFunctions:
 				status=patients.status,
 				dispensary_id=patients.dispensary_id,
 				room_number=patients.room_number,
-				bunk_number=patients.bunk_number
+				bunk_number=patients.bunk_number,
+				days_left=str(days_left)
 			)
 
 			patients_list.append(returned_patients)
 
 		return patients_list
-
-
-	async def get_patients_redis(self) -> list:
-		keys = self.redis_client.get_keys()
-		patients_list = []
-
-		for key in keys:
-			returned_patient = self.redis_client.get(key)
-
-			patients_list.append(json.loads(returned_patient))
-
-		logger.info("Patients sent from Redis")
-
-		return patients_list
-
-
-	async def add_patient_redis(self, patient_id: int, arrival_date: datetime, patient_model: PatientModel) -> None:
-		bunk_by_number = await bunk.select_bunk_by_number(
-			patient_model.dispensary_id, patient_model.room_number, patient_model.bunk_number)
-
-		redis_bunk_model = BunkResponse(
-			id=bunk_by_number.id,
-			bunk_status=BunkStatus.busy,
-			bunk_number=patient_model.bunk_number,
-			room_number=patient_model.bunk_number,
-			dispensary_id=patient_model.dispensary_id
-		)
-
-		self.redis_bunk_client.set(bunk_by_number.id, json.dumps(jsonable_encoder(redis_bunk_model)))
-
-		model_patient = PatientResponse(
-			id=patient_id,
-			firstname=patient_model.firstname,
-			lastname=patient_model.lastname,
-			arrival_date=arrival_date,
-			dispensary_id=patient_model.dispensary_id,
-			room_number=patient_model.room_number,
-			bunk_number=patient_model.bunk_number
-		)
-
-		self.redis_client.set(patient_id, json.dumps(jsonable_encoder(model_patient)))
 
 
 	@staticmethod
@@ -135,13 +93,14 @@ class PatientsFunctions:
 				return True
 
 
-	@staticmethod
-	async def get_patient_by_id_function(patient_id: int) -> PatientResponse:
+	async def get_patient_by_id_function(self, patient_id: int) -> PatientResponse:
 		patient_by_id = await patient.select_patient_by_id(patient_id)
 
 		if patient_by_id is None:
 			logger.info("Patient not found")
 			raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Patient with this id not found")
+
+		days_left = await self.days_left(patient_by_id.days_of_treatment, patient_by_id.arrival_date)
 
 		logger.info("Patient sent from DB")
 
@@ -153,39 +112,62 @@ class PatientsFunctions:
 			status=patient_by_id.status,
 			dispensary_id=patient_by_id.dispensary_id,
 			room_number=patient_by_id.room_number,
-			bunk_number=patient_by_id.bunk_number
+			bunk_number=patient_by_id.bunk_number,
+			days_left=str(days_left)
 		)
 
 
-	async def get_patient_by_id_redis(self, patient_id: int) -> PatientResponse:
-		patient_by_id = self.redis_client.get(patient_id)
+	@staticmethod
+	async def days_left(day: int, arrival_date: datetime) -> timedelta:
 
-		if patient_by_id is None:
-			logger.warning("Patient not found")
-			raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Patient not found")
+		tashkent_tz = pytz.timezone('Asia/Tashkent')
+		patient_tashkent_time = arrival_date.astimezone(tashkent_tz)
 
-		logger.info("Patient sent from Redis")
-		return json.loads(patient_by_id)
+		today = datetime.now()
+		arrival_day = patient_tashkent_time.day + day
 
-
-	async def update_patient_redis(
-			self, patient_id: int, firstname: str,
-			lastname: str, arrival_date: datetime,
-			patient_status: PatientStatus, dispensary_id: int,
-			room_number: int, bunk_number: int
-	) -> None:
-
-		patient_model = PatientResponse(
-			id=patient_id,
-			firstname=firstname,
-			lastname=lastname,
-			arrival_date=arrival_date,
-			status=patient_status,
-			dispensary_id=dispensary_id,
-			room_number=room_number,
-			bunk_number=bunk_number
+		day_of_discharge = datetime(
+			patient_tashkent_time.year, patient_tashkent_time.month, arrival_day,
+			hour=patient_tashkent_time.hour, minute=patient_tashkent_time.minute,
+			second=patient_tashkent_time.second
 		)
 
-		self.redis_client.set(patient_id, json.dumps(jsonable_encoder(patient_model)))
+		result = day_of_discharge - today
+
+		return result
+
+	@staticmethod
+	async def day_of_discharge(day: int, arrival_date: datetime) -> datetime:
+
+		tashkent_tz = pytz.timezone('Asia/Tashkent')
+		patient_tashkent_time = arrival_date.astimezone(tashkent_tz)
+
+		arrival_day = patient_tashkent_time.day + day
+
+		day_of_discharge = datetime(
+			patient_tashkent_time.year, patient_tashkent_time.month, arrival_day,
+			hour=patient_tashkent_time.hour, minute=patient_tashkent_time.minute,
+			second=patient_tashkent_time.second
+		)
+
+		return day_of_discharge
+
+
+	@staticmethod
+	async def minute_of_discharge(minute: int, arrival_date: datetime) -> datetime:
+
+		tashkent_tz = pytz.timezone('Asia/Tashkent')
+		patient_tashkent_time = arrival_date.astimezone(tashkent_tz)
+
+		arrival_minute = patient_tashkent_time.minute + minute
+
+		day_of_discharge = datetime(
+			patient_tashkent_time.year, patient_tashkent_time.month, patient_tashkent_time.day,
+			hour=patient_tashkent_time.hour, minute=arrival_minute,
+			second=patient_tashkent_time.second
+		)
+
+		return day_of_discharge
+
 
 

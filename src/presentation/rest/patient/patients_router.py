@@ -26,9 +26,11 @@ async def add_patient(
 		dispensary_id: int = Query(..., description="The dispensary id of the patient"),
 		room_number: int = Query(..., description="The room number of the patient"),
 		bunk_number: int = Query(..., description="The bunk number of the patient"),
+		days_of_treatment: int = Query(..., description="How many days should the patient be treated", le=30),
 		token: str = Depends(get_token)
 ) -> PatientResponseForPost:
-	return await patient_service.add_patient_service(firstname, lastname, dispensary_id, room_number, bunk_number, token)
+	return await patient_service.add_patient_service(
+		firstname, lastname, dispensary_id, room_number, bunk_number, days_of_treatment, token)
 
 
 @patient_router.get("/{patient_id}", response_model=PatientResponse, status_code=status.HTTP_200_OK)
@@ -46,7 +48,7 @@ async def update_patient(
 
 
 @patient_router.patch("/comeback/{patient_id}", status_code=status.HTTP_200_OK, response_model=PatientResponseForPut)
-async def update_patient(
+async def comeback_patient(
 		patient_id: int, token: str = Depends(get_token)
 ) -> PatientResponseForPut:
 	return await patient_service.update_patient_status_service(patient_id, token)

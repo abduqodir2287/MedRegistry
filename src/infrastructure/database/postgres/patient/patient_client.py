@@ -66,7 +66,8 @@ class PatientDb:
 					lastname=patient_model.lastname,
 					dispensary_id=patient_model.dispensary_id,
 					room_number=patient_model.room_number,
-					bunk_number=patient_model.bunk_number
+					bunk_number=patient_model.bunk_number,
+					days_of_treatment=patient_model.days_of_treatment
 				)
 				session.add(insert_into)
 
@@ -115,11 +116,11 @@ class PatientDb:
 
 			return result.scalars().first()
 
-	async def update_patient_status_crone(self) -> list[PatientResponse] | None:
+	async def update_patient_status_crone(self, day_of_discharge: datetime) -> list[PatientResponse] | None:
 		async with self.async_session() as session:
 			async with session.begin():
 				local_time = datetime.now()
-				term = local_time.astimezone(pytz.utc) - timedelta(minutes=settings.LENGTH_OF_STAY)
+				term = local_time.astimezone(pytz.utc) - timedelta(days=10)
 
 				result = await session.execute(select(Patient).where(
 					Patient.status != PatientStatus.discharged,
@@ -151,6 +152,20 @@ class PatientDb:
 				await session.commit()
 
 				return patients_list
+
+	async def discharge_patient(self, patient_id: int):
+		async with self.async_session() as session:
+			async with session.begin():
+				update_patient = update(Patient).where(Patient.id == patient_id).values(
+					status=PatientStatus.discharged
+				)
+
+				result = await session.execute(update_patient)
+				await session.commit()
+
+				if result.rowcount > 0:
+					return True
+
 
 	async def update_patient_status(self, patient_id: int) -> bool | None:
 		async with self.async_session() as session:

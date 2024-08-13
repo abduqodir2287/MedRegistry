@@ -25,6 +25,7 @@ def upgrade() -> None:
                type_=sa.TIMESTAMP(timezone=True),
                existing_nullable=True,
                existing_server_default=sa.text('now()'))
+    op.add_column('patients', sa.Column('days_of_treatment', sa.Integer(), nullable=False))
     # ### end Alembic commands ###
 
 
