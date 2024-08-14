@@ -93,26 +93,27 @@ class UsersDb:
 			return result.scalars().first()
 
 
-	async def create_user_superadmin(self, firstname: str, lastname: str, password: str, dispensary_id: int) -> int:
+	async def create_user_superadmin(self) -> None:
 		async with self.async_session() as session:
 			async with session.begin():
-				insert_into = User(
-					firstname=firstname.capitalize(),
-					lastname=lastname.capitalize(),
-					password=password,
-					role="superadmin",
-					job_title="superadmin",
-					dispensary_id=dispensary_id
-				)
-				session.add(insert_into)
+				first_user = await self.select_user_by_id(1)
 
-			await session.commit()
+				if first_user is None:
+					insert_into = User(
+						firstname="admin",
+						lastname="adminov",
+						password="password",
+						role=UserRole.superadmin,
+						job_title="superadmin",
+						dispensary_id=1
+					)
+					session.add(insert_into)
 
-			await session.refresh(insert_into)
-			user_id = insert_into.id
+					await session.commit()
 
-			logger.info("User added to DB")
-			return user_id
+					logger.info("User added to DB")
+
+				logger.info("First User superadmin already added")
 
 
 	async def select_users_like(

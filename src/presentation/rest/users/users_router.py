@@ -32,6 +32,11 @@ async def user_authorization(
 	return await users_service.auth_user(response, firstname, lastname, password, dispensary_id)
 
 
+@users_router.get("/info", response_model=UserResponse, status_code=status.HTTP_200_OK)
+async def get_user_info(token: str = Depends(get_token)) -> UserResponse:
+	return await users_service.get_user_info_service(token)
+
+
 @users_router.post("", response_model=UserResponseForPost, status_code=status.HTTP_201_CREATED)
 async def add_user(
 		firstname: str = Query(..., description="The firstname of the bunk"),

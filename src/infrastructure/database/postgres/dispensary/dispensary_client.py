@@ -135,4 +135,21 @@ class DispensaryDb:
 
 			return result.scalars().all()
 
+	async def create_first_dispensary(self) -> None:
+		async with self.async_session() as session:
+			async with session.begin():
+				dispensary_by_id = await self.select_dispensary_by_id(1)
+
+				if dispensary_by_id is None:
+					insert_into = Dispensary(
+						dispensary_name="Medion Innovation",
+						address="Abdulla Qodiriy 39/1"
+					)
+					session.add(insert_into)
+					await session.commit()
+
+					logger.info("The First Dispensary added to DB")
+
+				logger.info("First Dispensary already added")
+
 

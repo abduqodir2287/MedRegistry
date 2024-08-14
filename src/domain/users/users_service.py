@@ -7,7 +7,7 @@ from src.domain.users.schema import UserModel, UserResponse, AllUsers, Authorize
 from src.domain.users.schema import UserResponseForPut, UserResponseForPost
 from src.domain.enums import UserRole
 from src.infrastructure.database.postgres.create_db import dispensary, users
-from src.domain.authorization.auth import create_access_token, get_token
+from src.domain.authorization.auth import create_access_token, get_token, decode_access_token
 from src.domain.authorization.dependencies import check_user_is_superadmin, check_user_is_doctor
 
 
@@ -27,6 +27,27 @@ class UsersService(UsersFunctions):
 		logger.info("Users sent from Db")
 
 		return AllUsers(Users=users_list)
+
+
+	@staticmethod
+	async def get_user_info_service(token: str = Depends(get_token)) -> UserResponse:
+		access_token = decode_access_token(token)
+		user_id = access_token.get("sub")
+
+		user_by_id = await users.select_user_by_id(int(user_id))
+
+		if user_by_id is None:
+			logger.warning("User not found")
+			raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='User with this ID not found')
+
+		return UserResponse(
+			id=user_by_id.id,
+			firstname=user_by_id.firstname,
+			lastname=user_by_id.lastname,
+			job_title=user_by_id.job_title,
+			role=user_by_id.role,
+			dispensary_id=user_by_id.dispensary_id
+		)
 
 
 	@staticmethod
